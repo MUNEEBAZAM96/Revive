@@ -14,8 +14,8 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  // Anchor deep links / reloads on the switchboard so redirect logic always runs.
+  initialRouteName: 'index',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -51,8 +51,30 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+
+        {/* Global Modals */}
+        <Stack.Screen
+          name="(modals)/panic-mode"
+          options={{
+            presentation: 'fullScreenModal',
+            title: 'Panic Mode',
+            headerShown: false,
+            // Panic Mode should only be dismissed via its own buttons.
+            gestureEnabled: false,
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/crisis-resources"
+          options={{ presentation: 'modal', title: 'Crisis Support' }}
+        />
+        <Stack.Screen
+          name="(modals)/daily-check-in"
+          options={{ presentation: 'modal', title: 'Daily Check-in' }}
+        />
       </Stack>
     </ThemeProvider>
   );
