@@ -6,17 +6,17 @@ import OnboardingScaffold from '@/components/OnboardingScaffold';
 import OptionRow from '@/components/onboarding/OptionRow';
 import { useAppStore } from '@/stores/appStore';
 
-const TRIGGER_OPTIONS = [
-  { emoji: '🌙', label: 'Late night' },
-  { emoji: '😰', label: 'Stress' },
-  { emoji: '😔', label: 'Loneliness' },
-  { emoji: '📱', label: 'Social media' },
-  { emoji: '😴', label: 'Boredom' },
-  { emoji: '💔', label: 'Emotional situations' },
-  { emoji: '🏠', label: 'Being alone' },
+const FOCUS_OPTIONS = [
+  { emoji: '🌱', label: 'Reduce porn use' },
+  { emoji: '🎯', label: 'Quit porn completely' },
+  { emoji: '🔁', label: 'Control compulsive habits' },
+  { emoji: '🧠', label: 'Improve focus and productivity' },
+  { emoji: '💪', label: 'Improve confidence' },
+  { emoji: '❤️', label: 'Improve relationships' },
+  { emoji: '🧭', label: 'Build discipline' },
 ];
 
-export default function TriggersScreen() {
+export default function FocusScreen() {
   const router = useRouter();
   const updateProfile = useAppStore((state) => state.updateProfile);
   const [selected, setSelected] = useState<string[]>([]);
@@ -30,26 +30,26 @@ export default function TriggersScreen() {
   };
 
   const handleNext = () => {
-    updateProfile({ triggers: selected });
-    router.push('/(onboarding)/impact');
+    updateProfile({ focusAreas: selected });
+    router.push('/(onboarding)/goal');
   };
 
   return (
     <OnboardingScaffold
-      step={4}
+      step={2}
       ctaLabel="Next"
       ctaDisabled={selected.length === 0}
       onBack={() => router.back()}
       onCtaPress={handleNext}>
       <Text className="text-[26px] font-bold text-revive-ink dark:text-revive-ink-dark">
-        When do you struggle the most?
+        What would you like to improve?
       </Text>
       <Text className="mt-3 text-base leading-6 text-revive-muted dark:text-revive-muted-dark">
-        Knowing your moments helps your coach prepare you for them.
+        Pick everything that fits. There are no wrong answers here.
       </Text>
 
       <View className="mt-7">
-        {TRIGGER_OPTIONS.map((option) => (
+        {FOCUS_OPTIONS.map((option) => (
           <OptionRow
             key={option.label}
             emoji={option.emoji}

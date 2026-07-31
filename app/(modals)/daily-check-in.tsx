@@ -21,8 +21,15 @@ const MOODS = [
 
 const URGE_LEVELS = [1, 2, 3, 4, 5];
 
+// Calm rain-blue for storm days — deliberately never red (no shame framing).
+const STORM_INK = '#5E7C91';
+const STORM_CHIP = '#E9F0F4';
+
+type DayStatus = 'growth' | 'storm';
+
 export default function DailyCheckInScreen() {
   const router = useRouter();
+  const [dayStatus, setDayStatus] = useState<DayStatus | null>(null);
   const [mood, setMood] = useState<string | null>(null);
   const [urge, setUrge] = useState<number | null>(null);
   const [note, setNote] = useState('');
@@ -35,6 +42,46 @@ export default function DailyCheckInScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.title}>How are you today?</Text>
+
+      <Text style={styles.sectionTitle}>How did today go?</Text>
+      <View style={styles.dayStatusRow}>
+        <Pressable
+          style={[
+            styles.dayStatusOption,
+            dayStatus === 'growth' && styles.dayStatusGrowthSelected,
+          ]}
+          onPress={() => setDayStatus('growth')}>
+          <Text style={styles.dayStatusEmoji}>🌿</Text>
+          <Text
+            style={[
+              styles.dayStatusLabel,
+              dayStatus === 'growth' && { color: palette.primary, fontWeight: '700' },
+            ]}>
+            Growing
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.dayStatusOption,
+            dayStatus === 'storm' && styles.dayStatusStormSelected,
+          ]}
+          onPress={() => setDayStatus('storm')}>
+          <Text style={styles.dayStatusEmoji}>⛈️</Text>
+          <Text
+            style={[
+              styles.dayStatusLabel,
+              dayStatus === 'storm' && { color: STORM_INK, fontWeight: '700' },
+            ]}>
+            A storm passed
+          </Text>
+        </Pressable>
+      </View>
+      {dayStatus === 'storm' && (
+        <Text style={styles.stormHint}>
+          A storm never resets your garden — it simply pauses growth for today.
+          Be kind to yourself; you showed up, and that counts.
+        </Text>
+      )}
 
       <Text style={styles.sectionTitle}>Mood</Text>
       <View style={styles.moodRow}>
@@ -98,6 +145,30 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: palette.textPrimary,
     marginTop: 24,
+  },
+  dayStatusRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  dayStatusOption: {
+    flex: 1,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: palette.border,
+    borderRadius: 16,
+    paddingVertical: 14,
+    backgroundColor: palette.surfaceMuted,
+  },
+  dayStatusGrowthSelected: { borderColor: palette.primary, backgroundColor: '#e7f4f2' },
+  dayStatusStormSelected: { borderColor: STORM_INK, backgroundColor: STORM_CHIP },
+  dayStatusEmoji: { fontSize: 24 },
+  dayStatusLabel: { fontSize: 13, color: palette.textSecondary, marginTop: 4 },
+  stormHint: {
+    fontSize: 13,
+    color: STORM_INK,
+    marginTop: 10,
+    lineHeight: 19,
   },
   moodRow: {
     flexDirection: 'row',

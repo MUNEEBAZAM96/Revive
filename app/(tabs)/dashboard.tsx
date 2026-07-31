@@ -1,94 +1,44 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { palette } from '@/constants/Colors';
+import DailyFocusCard from '@/components/dashboard/DailyFocusCard';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import RecoveryGardenCard from '@/components/dashboard/RecoveryGardenCard';
+import ReflectionCard from '@/components/dashboard/ReflectionCard';
+import { gardenSummary } from '@/components/dashboard/gardenData';
+import { mockDashboard } from '@/components/dashboard/theme';
 
+/**
+ * The Revive home screen: a personal recovery space, not a stats dashboard.
+ * Cards enter one by one; all data is mock until Supabase is wired up.
+ */
 export default function DashboardScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="automatic">
-      <Text style={styles.greeting}>Good to see you 👋</Text>
-      <Text style={styles.subtitle}>One day at a time. Here's where you stand.</Text>
+    <SafeAreaView edges={['top']} className="flex-1 bg-revive-bg dark:bg-revive-bg-dark">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerClassName="px-5 pb-36 pt-4">
+        <DashboardHeader daysGrowing={gardenSummary.growthDays} delay={0} />
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Current streak</Text>
-        <Text style={styles.streakValue}>12 days</Text>
-        <Text style={styles.cardHint}>Placeholder data — wire up real tracking later.</Text>
-      </View>
+        <View className="mt-7">
+          <DailyFocusCard
+            focus={mockDashboard.todayFocus}
+            delay={120}
+            onStart={() => router.push('/(modals)/daily-check-in')}
+          />
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Today</Text>
-        <Pressable
-          style={styles.primaryButton}
-          onPress={() => router.push('/(modals)/daily-check-in')}>
-          <Text style={styles.primaryButtonText}>Start daily check-in</Text>
-        </Pressable>
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(modals)/crisis-resources')}>
-          <Text style={styles.secondaryButtonText}>Crisis resources</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Quick tip</Text>
-        <Text style={styles.cardBody}>
-          Urges usually pass within 15–30 minutes. If one hits, try the Panic
-          Mode button — it will walk you through a breathing exercise.
-        </Text>
-      </View>
-    </ScrollView>
+        <View className="mt-5">
+          <RecoveryGardenCard delay={240} />
+        </View>
+        <View className="mt-5">
+          <ReflectionCard delay={600} onWrite={() => router.push('/(modals)/daily-check-in')} />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surfaceMuted },
-  content: { padding: 20, paddingBottom: 120 },
-  greeting: { fontSize: 26, fontWeight: '700', color: palette.textPrimary },
-  subtitle: { fontSize: 15, color: palette.textSecondary, marginTop: 6 },
-  card: {
-    backgroundColor: palette.surface,
-    borderRadius: 16,
-    padding: 18,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: palette.border,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: palette.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  streakValue: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: palette.primary,
-    marginTop: 6,
-  },
-  cardHint: { fontSize: 13, color: palette.textSecondary, marginTop: 4 },
-  cardBody: { fontSize: 15, color: palette.textPrimary, marginTop: 8, lineHeight: 22 },
-  primaryButton: {
-    backgroundColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  primaryButtonText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  secondaryButtonText: { color: palette.primary, fontSize: 15, fontWeight: '600' },
-});

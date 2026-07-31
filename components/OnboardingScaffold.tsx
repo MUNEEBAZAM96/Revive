@@ -1,128 +1,102 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { PropsWithChildren } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { palette } from '@/constants/Colors';
+import { useReviveColors } from '@/components/dashboard/theme';
 
-const TOTAL_STEPS = 4;
+const DEFAULT_TOTAL_STEPS = 7;
 
 type Props = PropsWithChildren<{
-  /** 1-based onboarding step, fills the progress bar. */
+  /** 1-based question step; fills the progress bar. */
   step: number;
+  totalSteps?: number;
   ctaLabel: string;
   onCtaPress: () => void;
+  ctaDisabled?: boolean;
   ctaVariant?: 'primary' | 'secondary';
+  /** When provided, shows a back chevron top-left. */
+  onBack?: () => void;
 }>;
 
 /**
- * Shared shell for onboarding steps: progress bar, scrollable content that
- * never clips on small screens, and a CTA pinned above the keyboard.
+ * Shared shell for onboarding steps, styled to match the Dashboard (Revive
+ * palette, dark mode, soft entrance animation). Progress bar + a CTA that
+ * stays disabled until the step is answered.
  */
 export default function OnboardingScaffold({
   step,
+  totalSteps = DEFAULT_TOTAL_STEPS,
   ctaLabel,
   onCtaPress,
+  ctaDisabled = false,
   ctaVariant = 'primary',
+  onBack,
   children,
 }: Props) {
-  const insets = useSafeAreaInsets();
+  const colors = useReviveColors();
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}>
-      <View style={styles.progressRow}>
-        {Array.from({ length: TOTAL_STEPS }, (_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.progressSegment,
-              index < step && styles.progressSegmentActive,
-            ]}
-          />
-        ))}
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      className="flex-1 bg-revive-bg dark:bg-revive-bg-dark">
+      <View className="flex-row items-center gap-3 px-6 pt-2">
+        {onBack ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}
+            onPress={onBack}
+            className="h-8 w-8 items-center justify-center rounded-full active:opacity-70">
+            <FontAwesome name="chevron-left" size={16} color={colors.muted} />
+          </Pressable>
+        ) : (
+          <View className="h-8 w-8" />
+        )}
+        <View className="flex-1 flex-row gap-1.5">
+          {Array.from({ length: totalSteps }, (_, index) => (
+            <View
+              key={index}
+              className={`h-1 flex-1 rounded-full ${
+                index < step
+                  ? 'bg-revive-primary dark:bg-revive-primary-dark'
+                  : 'bg-revive-mist dark:bg-revive-mist-dark'
+              }`}
+            />
+          ))}
+        </View>
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentInsetAdjustmentBehavior="automatic">
-        <Animated.View entering={FadeInDown.duration(350)}>{children}</Animated.View>
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerClassName="grow px-6 pb-6 pt-7">
+        <Animated.View entering={FadeInDown.duration(400)}>{children}</Animated.View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 8 }]}>
+      <View className="px-6 pb-2 pt-2">
         <Pressable
-          style={({ pressed }) => [
-            ctaVariant === 'primary' ? styles.primaryButton : styles.secondaryButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={onCtaPress}>
+          accessibilityRole="button"
+          accessibilityState={{ disabled: ctaDisabled }}
+          disabled={ctaDisabled}
+          onPress={onCtaPress}
+          className={`items-center rounded-2xl py-4 ${
+            ctaVariant === 'primary'
+              ? 'bg-revive-primary dark:bg-revive-primary-dark'
+              : 'border-2 border-revive-primary dark:border-revive-primary-dark'
+          } ${ctaDisabled ? 'opacity-40' : 'active:opacity-90'}`}>
           <Text
-            style={
+            className={`text-base font-semibold ${
               ctaVariant === 'primary'
-                ? styles.primaryButtonText
-                : styles.secondaryButtonText
-            }>
+                ? 'text-white dark:text-revive-bg-dark'
+                : 'text-revive-primary dark:text-revive-primary-dark'
+            }`}>
             {ctaLabel}
           </Text>
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
-  progressRow: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  progressSegment: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: palette.border,
-  },
-  progressSegmentActive: { backgroundColor: palette.primary },
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-  footer: { paddingHorizontal: 24, paddingTop: 8, backgroundColor: palette.surface },
-  primaryButton: {
-    backgroundColor: palette.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: palette.primaryDark,
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-  },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  secondaryButton: {
-    borderWidth: 1.5,
-    borderColor: palette.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: { color: palette.primary, fontSize: 16, fontWeight: '600' },
-  buttonPressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
-});

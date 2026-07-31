@@ -1,26 +1,24 @@
 import { Stack } from 'expo-router';
 
-import { palette } from '@/constants/Colors';
-
 export default function OnboardingLayout() {
   return (
     <Stack
       screenOptions={{
-        // Onboarding is strictly sequential: no back swipes, no back button.
+        // Full-bleed like the Dashboard; the in-screen progress bar and back
+        // chevron replace the native header. Sequential: no back swipe.
+        headerShown: false,
         gestureEnabled: false,
         animation: 'slide_from_right',
         animationDuration: 250,
-        headerBackVisible: false,
-        headerShadowVisible: false,
-        headerTitleAlign: 'center',
-        headerTintColor: palette.textPrimary,
-        headerStyle: { backgroundColor: palette.surface },
       }}>
-      {/* The in-screen progress bar shows the step count. */}
-      <Stack.Screen name="index" options={{ title: 'Age check' }} />
-      <Stack.Screen name="goals" options={{ title: 'Your goals' }} />
-      <Stack.Screen name="triggers" options={{ title: 'Triggers' }} />
-      <Stack.Screen name="disclaimer" options={{ title: 'Before we start' }} />
+      <Stack.Screen name="index" />
+      <Stack.Screen name="age" />
+      <Stack.Screen name="focus" />
+      <Stack.Screen name="goal" />
+      <Stack.Screen name="triggers" />
+      <Stack.Screen name="impact" />
+      <Stack.Screen name="support" />
+      <Stack.Screen name="disclaimer" />
     </Stack>
   );
 }

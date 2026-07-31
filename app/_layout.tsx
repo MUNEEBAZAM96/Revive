@@ -4,7 +4,17 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
+import { LogBox } from 'react-native';
 import 'react-native-reanimated';
+
+import '../global.css';
+
+if (__DEV__) {
+  // Expo Go activates expo-keep-awake in dev without a .catch(); on Android the
+  // native call fails transiently when the app isn't foregrounded during a
+  // reload. Harmless — worst case the screen sleeps while developing.
+  LogBox.ignoreLogs([/Unable to activate keep awake/]);
+}
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -90,6 +100,14 @@ function RootLayoutNav() {
           options={{
             presentation: 'modal',
             title: 'Daily Check-in',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="(modals)/journey-calendar"
+          options={{
+            presentation: 'modal',
+            title: 'Your Journey',
             animation: 'slide_from_bottom',
           }}
         />

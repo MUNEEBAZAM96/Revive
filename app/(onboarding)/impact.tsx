@@ -6,17 +6,16 @@ import OnboardingScaffold from '@/components/OnboardingScaffold';
 import OptionRow from '@/components/onboarding/OptionRow';
 import { useAppStore } from '@/stores/appStore';
 
-const TRIGGER_OPTIONS = [
-  { emoji: '🌙', label: 'Late night' },
-  { emoji: '😰', label: 'Stress' },
-  { emoji: '😔', label: 'Loneliness' },
-  { emoji: '📱', label: 'Social media' },
-  { emoji: '😴', label: 'Boredom' },
-  { emoji: '💔', label: 'Emotional situations' },
-  { emoji: '🏠', label: 'Being alone' },
+const IMPACT_OPTIONS = [
+  'My confidence',
+  'My motivation',
+  'My productivity',
+  'My relationships',
+  'My mental peace',
+  'My self-control',
 ];
 
-export default function TriggersScreen() {
+export default function ImpactScreen() {
   const router = useRouter();
   const updateProfile = useAppStore((state) => state.updateProfile);
   const [selected, setSelected] = useState<string[]>([]);
@@ -30,32 +29,31 @@ export default function TriggersScreen() {
   };
 
   const handleNext = () => {
-    updateProfile({ triggers: selected });
-    router.push('/(onboarding)/impact');
+    updateProfile({ lifeImpact: selected });
+    router.push('/(onboarding)/support');
   };
 
   return (
     <OnboardingScaffold
-      step={4}
+      step={5}
       ctaLabel="Next"
       ctaDisabled={selected.length === 0}
       onBack={() => router.back()}
       onCtaPress={handleNext}>
       <Text className="text-[26px] font-bold text-revive-ink dark:text-revive-ink-dark">
-        When do you struggle the most?
+        How has this affected your life?
       </Text>
       <Text className="mt-3 text-base leading-6 text-revive-muted dark:text-revive-muted-dark">
-        Knowing your moments helps your coach prepare you for them.
+        Naming it is the first step to changing it. Pick all that apply.
       </Text>
 
       <View className="mt-7">
-        {TRIGGER_OPTIONS.map((option) => (
+        {IMPACT_OPTIONS.map((label) => (
           <OptionRow
-            key={option.label}
-            emoji={option.emoji}
-            label={option.label}
-            selected={selected.includes(option.label)}
-            onPress={() => toggle(option.label)}
+            key={label}
+            label={label}
+            selected={selected.includes(label)}
+            onPress={() => toggle(label)}
           />
         ))}
       </View>

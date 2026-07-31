@@ -1,10 +1,10 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs, useRouter } from 'expo-router';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Tabs } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
-import Colors, { palette } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
+import UrgeSupportButton from '@/components/dashboard/UrgeSupportButton';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
@@ -18,8 +18,6 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
@@ -38,7 +36,8 @@ export default function TabLayout() {
         <Tabs.Screen
           name="dashboard"
           options={{
-            title: 'Dashboard',
+            title: 'Home',
+            headerShown: false,
             tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           }}
         />
@@ -72,40 +71,12 @@ export default function TabLayout() {
         />
       </Tabs>
 
-      {/* Persistent Panic Mode FAB, visible above every tab. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Open Panic Mode"
-        style={({ pressed }) => [
-          styles.fab,
-          { bottom: insets.bottom + (Platform.OS === 'web' ? 76 : 66) },
-          pressed && styles.fabPressed,
-        ]}
-        onPress={() => router.push('/(modals)/panic-mode')}>
-        <FontAwesome name="heartbeat" size={22} color="#fff" />
-        <Text style={styles.fabText}>SOS</Text>
-      </Pressable>
+      {/* Persistent support button, visible above every tab. */}
+      <UrgeSupportButton />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: palette.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 6,
-  },
-  fabPressed: { opacity: 0.85, transform: [{ scale: 0.96 }] },
-  fabText: { color: '#fff', fontSize: 11, fontWeight: '700', marginTop: 1 },
 });
