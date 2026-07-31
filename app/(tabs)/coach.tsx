@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
+  FlatList,
   KeyboardAvoidingView,
+  ListRenderItem,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +13,9 @@ import {
 
 import { palette } from '@/constants/Colors';
 
-const PLACEHOLDER_MESSAGES = [
+type CoachMessage = { id: string; from: 'coach' | 'user'; text: string };
+
+const PLACEHOLDER_MESSAGES: CoachMessage[] = [
   { id: '1', from: 'coach', text: "Hi, I'm your recovery coach. How are you feeling today?" },
   { id: '2', from: 'user', text: 'A bit on edge, honestly. Long day.' },
   {
@@ -20,35 +23,56 @@ const PLACEHOLDER_MESSAGES = [
     from: 'coach',
     text: "That's completely understandable. Want to talk through what made today hard, or would a quick grounding exercise help more right now?",
   },
-] as const;
+];
+
+function ListHeader() {
+  return (
+    <Text style={styles.notice}>
+      Placeholder conversation — the AI backend is not connected yet. The
+      coach offers support and coping ideas, not medical advice.
+    </Text>
+  );
+}
 
 export default function CoachScreen() {
   const [draft, setDraft] = useState('');
+  const listRef = useRef<FlatList<CoachMessage>>(null);
+
+  const renderMessage: ListRenderItem<CoachMessage> = useCallback(
+    ({ item }) => (
+      <View
+        style={[
+          styles.bubble,
+          item.from === 'user' ? styles.userBubble : styles.coachBubble,
+        ]}>
+        <Text style={item.from === 'user' ? styles.userText : styles.coachText}>
+          {item.text}
+        </Text>
+      </View>
+    ),
+    []
+  );
 
   return (
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={90}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.notice}>
-          Placeholder conversation — the AI backend is not connected yet. The
-          coach offers support and coping ideas, not medical advice.
-        </Text>
-        {PLACEHOLDER_MESSAGES.map((message) => (
-          <View
-            key={message.id}
-            style={[
-              styles.bubble,
-              message.from === 'user' ? styles.userBubble : styles.coachBubble,
-            ]}>
-            <Text
-              style={message.from === 'user' ? styles.userText : styles.coachText}>
-              {message.text}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
+      <FlatList
+        ref={listRef}
+        data={PLACEHOLDER_MESSAGES}
+        keyExtractor={(item) => item.id}
+        renderItem={renderMessage}
+        ListHeaderComponent={ListHeader}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        initialNumToRender={12}
+        windowSize={9}
+        maxToRenderPerBatch={10}
+        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+      />
 
       <View style={styles.inputRow}>
         <TextInput

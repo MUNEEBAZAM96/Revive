@@ -27,7 +27,11 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic">
       <Text style={styles.title}>Settings</Text>
 
       <View style={styles.card}>

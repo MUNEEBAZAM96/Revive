@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import OnboardingScaffold from '@/components/OnboardingScaffold';
 import { palette } from '@/constants/Colors';
 
 const SEVERITY_LEVELS = [1, 2, 3, 4, 5];
@@ -29,7 +30,10 @@ export default function TriggersScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <OnboardingScaffold
+      step={3}
+      ctaLabel="Next"
+      onCtaPress={() => router.push('/(onboarding)/disclaimer')}>
       <Text style={styles.title}>How would you rate things right now?</Text>
       <Text style={styles.body}>
         1 means it rarely affects your day, 5 means it feels overwhelming. This
@@ -42,7 +46,11 @@ export default function TriggersScreen() {
           return (
             <Pressable
               key={level}
-              style={[styles.severityDot, isSelected && styles.severityDotSelected]}
+              style={({ pressed }) => [
+                styles.severityDot,
+                isSelected && styles.severityDotSelected,
+                pressed && styles.pressed,
+              ]}
               onPress={() => setSeverity(level)}>
               <Text
                 style={[styles.severityText, isSelected && styles.severityTextSelected]}>
@@ -60,7 +68,11 @@ export default function TriggersScreen() {
           return (
             <Pressable
               key={trigger}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+              style={({ pressed }) => [
+                styles.chip,
+                isSelected && styles.chipSelected,
+                pressed && styles.pressed,
+              ]}
               onPress={() => toggleTrigger(trigger)}>
               <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
                 {trigger}
@@ -69,24 +81,12 @@ export default function TriggersScreen() {
           );
         })}
       </View>
-
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() => router.push('/(onboarding)/disclaimer')}>
-        <Text style={styles.primaryButtonText}>Next</Text>
-      </Pressable>
-    </View>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.surface,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  title: { fontSize: 24, fontWeight: '700', color: palette.textPrimary },
+  title: { fontSize: 26, fontWeight: '700', color: palette.textPrimary },
   body: {
     fontSize: 15,
     color: palette.textSecondary,
@@ -129,24 +129,16 @@ const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderColor: palette.border,
-    borderRadius: 20,
+    borderRadius: 22,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 11,
     backgroundColor: palette.surfaceMuted,
   },
   chipSelected: {
     backgroundColor: palette.primary,
     borderColor: palette.primary,
   },
+  pressed: { transform: [{ scale: 0.96 }] },
   chipText: { color: palette.textPrimary, fontSize: 14 },
   chipTextSelected: { color: '#fff', fontWeight: '600' },
-  primaryButton: {
-    backgroundColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 32,
-  },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

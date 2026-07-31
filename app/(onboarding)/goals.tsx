@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import OnboardingScaffold from '@/components/OnboardingScaffold';
 import { palette } from '@/constants/Colors';
 
 const GOAL_OPTIONS = [
@@ -26,7 +27,10 @@ export default function GoalsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <OnboardingScaffold
+      step={2}
+      ctaLabel="Next"
+      onCtaPress={() => router.push('/(onboarding)/triggers')}>
       <Text style={styles.title}>What does recovery mean to you?</Text>
       <Text style={styles.body}>
         Pick everything that applies. You can change these any time in
@@ -39,7 +43,11 @@ export default function GoalsScreen() {
           return (
             <Pressable
               key={goal}
-              style={[styles.chip, isSelected && styles.chipSelected]}
+              style={({ pressed }) => [
+                styles.chip,
+                isSelected && styles.chipSelected,
+                pressed && styles.chipPressed,
+              ]}
               onPress={() => toggleGoal(goal)}>
               <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
                 {goal}
@@ -48,24 +56,12 @@ export default function GoalsScreen() {
           );
         })}
       </View>
-
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() => router.push('/(onboarding)/triggers')}>
-        <Text style={styles.primaryButtonText}>Next</Text>
-      </Pressable>
-    </View>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.surface,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  title: { fontSize: 24, fontWeight: '700', color: palette.textPrimary },
+  title: { fontSize: 26, fontWeight: '700', color: palette.textPrimary },
   body: {
     fontSize: 15,
     color: palette.textSecondary,
@@ -81,24 +77,16 @@ const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
     borderColor: palette.border,
-    borderRadius: 20,
+    borderRadius: 22,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 11,
     backgroundColor: palette.surfaceMuted,
   },
   chipSelected: {
     backgroundColor: palette.primary,
     borderColor: palette.primary,
   },
+  chipPressed: { transform: [{ scale: 0.96 }] },
   chipText: { color: palette.textPrimary, fontSize: 14 },
   chipTextSelected: { color: '#fff', fontWeight: '600' },
-  primaryButton: {
-    backgroundColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 32,
-  },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

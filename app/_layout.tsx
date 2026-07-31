@@ -50,11 +50,17 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          animation: 'slide_from_right',
+          animationDuration: 250,
+          fullScreenGestureEnabled: true,
+          freezeOnBlur: true,
+        }}>
+        <Stack.Screen name="index" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
 
         {/* Global Modals */}
         <Stack.Screen
@@ -63,17 +69,29 @@ function RootLayoutNav() {
             presentation: 'fullScreenModal',
             title: 'Panic Mode',
             headerShown: false,
+            // Open instantly — this is the emergency path.
+            animation: 'fade',
+            animationDuration: 150,
             // Panic Mode should only be dismissed via its own buttons.
             gestureEnabled: false,
+            fullScreenGestureEnabled: false,
           }}
         />
         <Stack.Screen
           name="(modals)/crisis-resources"
-          options={{ presentation: 'modal', title: 'Crisis Support' }}
+          options={{
+            presentation: 'modal',
+            title: 'Crisis Support',
+            animation: 'slide_from_bottom',
+          }}
         />
         <Stack.Screen
           name="(modals)/daily-check-in"
-          options={{ presentation: 'modal', title: 'Daily Check-in' }}
+          options={{
+            presentation: 'modal',
+            title: 'Daily Check-in',
+            animation: 'slide_from_bottom',
+          }}
         />
       </Stack>
     </ThemeProvider>

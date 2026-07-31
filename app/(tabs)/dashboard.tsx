@@ -7,7 +7,11 @@ export default function DashboardScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic">
       <Text style={styles.greeting}>Good to see you 👋</Text>
       <Text style={styles.subtitle}>One day at a time. Here's where you stand.</Text>
 

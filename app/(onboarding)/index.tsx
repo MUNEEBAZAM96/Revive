@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import OnboardingScaffold from '@/components/OnboardingScaffold';
 import { palette } from '@/constants/Colors';
 import { useAppStore } from '@/stores/appStore';
 
@@ -35,25 +36,26 @@ export default function AgeGateScreen() {
 
   if (isUnderAge) {
     return (
-      <View style={styles.container}>
+      <OnboardingScaffold
+        step={1}
+        ctaLabel="View free support resources"
+        ctaVariant="secondary"
+        onCtaPress={() => router.push('/(modals)/crisis-resources')}>
         <Text style={styles.blockEmoji}>💙</Text>
-        <Text style={styles.title}>We can't offer you this app yet</Text>
-        <Text style={styles.body}>
+        <Text style={[styles.title, styles.centered]}>
+          We can't offer you this app yet
+        </Text>
+        <Text style={[styles.body, styles.centered]}>
           Recovery Companion is designed for adults 18 and over, so we can't
           let you continue. That doesn't mean you're on your own — free,
           confidential help for young people is available right now.
         </Text>
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={() => router.push('/(modals)/crisis-resources')}>
-          <Text style={styles.secondaryButtonText}>View free support resources</Text>
-        </Pressable>
-      </View>
+      </OnboardingScaffold>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <OnboardingScaffold step={1} ctaLabel="Continue" onCtaPress={handleContinue}>
       <Text style={styles.title}>First, a quick age check</Text>
       <Text style={styles.body}>
         Recovery Companion is for adults 18 and over. Please enter your year of
@@ -68,43 +70,30 @@ export default function AgeGateScreen() {
         maxLength={4}
         value={birthYear}
         onChangeText={setBirthYear}
+        onSubmitEditing={handleContinue}
+        returnKeyType="done"
       />
       {showError && (
         <Text style={styles.errorText}>Please enter a valid four-digit year.</Text>
       )}
-
-      <Pressable style={styles.primaryButton} onPress={handleContinue}>
-        <Text style={styles.primaryButtonText}>Continue</Text>
-      </Pressable>
-    </View>
+    </OnboardingScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: palette.surface,
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
-  blockEmoji: { fontSize: 48, textAlign: 'center', marginBottom: 16 },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: palette.textPrimary,
-    textAlign: 'center',
-  },
+  blockEmoji: { fontSize: 48, textAlign: 'center', marginBottom: 16, marginTop: 24 },
+  centered: { textAlign: 'center' },
+  title: { fontSize: 26, fontWeight: '700', color: palette.textPrimary },
   body: {
     fontSize: 15,
     color: palette.textSecondary,
-    textAlign: 'center',
     marginTop: 12,
     lineHeight: 22,
   },
   input: {
     borderWidth: 1,
     borderColor: palette.border,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 18,
@@ -114,21 +103,4 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   errorText: { color: palette.danger, marginTop: 8, textAlign: 'center' },
-  primaryButton: {
-    backgroundColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: palette.primary,
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 28,
-  },
-  secondaryButtonText: { color: palette.primary, fontSize: 16, fontWeight: '600' },
 });

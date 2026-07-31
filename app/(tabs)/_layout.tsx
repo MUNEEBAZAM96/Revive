@@ -29,6 +29,11 @@ export default function TabLayout() {
           // Disable the static render of the header on web
           // to prevent a hydration error in React Navigation v6.
           headerShown: useClientOnlyValue(false, true),
+          // Cross-fade + shift between tabs instead of an instant swap.
+          animation: 'shift',
+          lazy: true,
+          freezeOnBlur: true,
+          tabBarHideOnKeyboard: true,
         }}>
         <Tabs.Screen
           name="dashboard"

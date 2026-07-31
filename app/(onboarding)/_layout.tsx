@@ -8,15 +8,19 @@ export default function OnboardingLayout() {
       screenOptions={{
         // Onboarding is strictly sequential: no back swipes, no back button.
         gestureEnabled: false,
+        animation: 'slide_from_right',
+        animationDuration: 250,
         headerBackVisible: false,
         headerShadowVisible: false,
         headerTitleAlign: 'center',
         headerTintColor: palette.textPrimary,
+        headerStyle: { backgroundColor: palette.surface },
       }}>
-      <Stack.Screen name="index" options={{ title: 'Step 1 of 4 · Age check' }} />
-      <Stack.Screen name="goals" options={{ title: 'Step 2 of 4 · Your goals' }} />
-      <Stack.Screen name="triggers" options={{ title: 'Step 3 of 4 · Triggers' }} />
-      <Stack.Screen name="disclaimer" options={{ title: 'Step 4 of 4 · Before we start' }} />
+      {/* The in-screen progress bar shows the step count. */}
+      <Stack.Screen name="index" options={{ title: 'Age check' }} />
+      <Stack.Screen name="goals" options={{ title: 'Your goals' }} />
+      <Stack.Screen name="triggers" options={{ title: 'Triggers' }} />
+      <Stack.Screen name="disclaimer" options={{ title: 'Before we start' }} />
     </Stack>
   );
 }
