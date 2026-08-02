@@ -1,16 +1,31 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import OnboardingScaffold from '@/components/OnboardingScaffold';
 import { useAppStore } from '@/stores/appStore';
+import { useDataStore } from '@/stores/dataStore';
 
 export default function DisclaimerScreen() {
   const router = useRouter();
+  const profile = useAppStore((state) => state.profile);
   const setOnboardingComplete = useAppStore((state) => state.setOnboardingComplete);
   const updateProfile = useAppStore((state) => state.updateProfile);
+  const completeOnboarding = useDataStore((state) => state.completeOnboarding);
+  const [saving, setSaving] = useState(false);
 
-  const handleAgree = () => {
-    updateProfile({ completedAt: new Date().toISOString() });
+  const handleAgree = async () => {
+    if (saving) return;
+    setSaving(true);
+    const completedAt = new Date().toISOString();
+    updateProfile({ completedAt });
+    // Persist the collected answers to the local-first profile (SQLite + sync).
+    try {
+      await completeOnboarding({ ...profile, completedAt });
+    } catch {
+      // Never block the user from entering the app if the write fails; the
+      // answers remain in the in-memory store and can be re-synced later.
+    }
     setOnboardingComplete(true);
     router.replace('/(tabs)/dashboard');
   };

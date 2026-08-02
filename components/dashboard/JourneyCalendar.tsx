@@ -1,14 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import {
-  DayRecord,
-  dateKey,
-  gardenSummary,
-  monthStats,
-  recordFor,
-} from './gardenData';
+import { useDataStore } from '@/stores/dataStore';
+
+import { CalendarDay, dateKey } from './garden';
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -39,7 +35,7 @@ function DayCell({
   onPress,
 }: {
   date: Date;
-  record: DayRecord | undefined;
+  record: CalendarDay | undefined;
   isToday: boolean;
   isFuture: boolean;
   selected: boolean;
@@ -98,8 +94,9 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 /**
- * Month view of the recovery journey: 🌿 growth days, ⛈️ storm days, a small
- * dot for check-ins. Deliberately no red and no failure framing anywhere.
+ * Month view of the recovery journey, sourced from real check-ins via the data
+ * store: 🌿 growth days, ⛈️ storm days, a small dot for check-ins. No red and
+ * no failure framing anywhere.
  */
 export default function JourneyCalendar() {
   const today = new Date();
@@ -107,13 +104,41 @@ export default function JourneyCalendar() {
   const [viewed, setViewed] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
+  const monthRecords = useDataStore((s) => s.monthRecords);
+  const loadMonth = useDataStore((s) => s.loadMonth);
+  const dashboard = useDataStore((s) => s.dashboard);
+  const loadDashboard = useDataStore((s) => s.loadDashboard);
+
   const year = viewed.getFullYear();
   const month = viewed.getMonth();
+
+  useEffect(() => {
+    void loadMonth(year, month);
+  }, [year, month, loadMonth]);
+
+  useEffect(() => {
+    if (!dashboard) void loadDashboard();
+  }, [dashboard, loadDashboard]);
+
   const weeks = useMemo(() => weeksOf(year, month), [year, month]);
-  const stats = useMemo(() => monthStats(year, month), [year, month]);
+  const recordsByDate = useMemo(() => {
+    const map = new Map<string, CalendarDay>();
+    for (const record of monthRecords) map.set(record.date, record);
+    return map;
+  }, [monthRecords]);
+
+  const stats = useMemo(() => {
+    let growthDays = 0;
+    let checkIns = 0;
+    for (const record of monthRecords) {
+      if (record.status === 'growth') growthDays += 1;
+      if (record.checkedIn) checkIns += 1;
+    }
+    return { growthDays, checkIns };
+  }, [monthRecords]);
 
   const monthLabel = viewed.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-  const selectedRecord = selectedKey ? recordFor(selectedKey) : undefined;
+  const selectedRecord = selectedKey ? recordsByDate.get(selectedKey) : undefined;
   const selectedDate = selectedKey ? new Date(`${selectedKey}T12:00:00`) : null;
 
   const changeMonth = (delta: number) => {
@@ -152,7 +177,7 @@ export default function JourneyCalendar() {
       <View className="mt-4 flex-row gap-2">
         <Stat value={stats.growthDays} label="Growth days" />
         <Stat value={stats.checkIns} label="Check-ins" />
-        <Stat value={gardenSummary.longestJourney} label="Longest journey" />
+        <Stat value={dashboard?.longestStreak ?? 0} label="Longest journey" />
       </View>
 
       {/* Weekday header */}
@@ -177,7 +202,7 @@ export default function JourneyCalendar() {
                 <DayCell
                   key={dayIndex}
                   date={date}
-                  record={recordFor(key)}
+                  record={recordsByDate.get(key)}
                   isToday={key === todayKey}
                   isFuture={date > today}
                   selected={key === selectedKey}
@@ -212,7 +237,7 @@ export default function JourneyCalendar() {
           </Text>
           <Text className="mt-1.5 text-sm text-revive-ink dark:text-revive-ink-dark">
             {selectedRecord.status === 'storm' ? '⛈️ A storm passed' : '🌿 A day of growth'}
-            {selectedRecord.mood ? `  ·  mood ${selectedRecord.mood}` : ''}
+            {selectedRecord.moodEmoji ? `  ·  mood ${selectedRecord.moodEmoji}` : ''}
             {selectedRecord.checkedIn ? '  ·  💧 checked in' : ''}
           </Text>
           {selectedRecord.note && (

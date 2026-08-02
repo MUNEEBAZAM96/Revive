@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
-import { FlatList, ListRenderItem, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { FlatList, ListRenderItem, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { palette } from '@/constants/Colors';
+import { useGrowthStore } from '@/stores/growthStore';
 
 type CommunityPost = {
   id: string;
@@ -40,25 +41,48 @@ function ListHeader() {
     <>
       <Text style={styles.title}>Community</Text>
       <Text style={styles.subtitle}>
-        Everyone here is anonymous. Be kind — placeholder feed for now.
+        Everyone here is anonymous. Send encouragement — placeholder feed for now.
       </Text>
     </>
   );
 }
 
 export default function CommunityScreen() {
+  const completeMission = useGrowthStore((s) => s.completeMission);
+  const [hearted, setHearted] = useState<Set<string>>(new Set());
+
+  const encourage = useCallback(
+    (postId: string) => {
+      if (hearted.has(postId)) return;
+      setHearted((current) => new Set(current).add(postId));
+      completeMission('community_interaction');
+    },
+    [hearted, completeMission],
+  );
+
   const renderPost: ListRenderItem<CommunityPost> = useCallback(
-    ({ item }) => (
-      <View style={styles.postCard}>
-        <View style={styles.postHeader}>
-          <Text style={styles.handle}>@{item.handle}</Text>
-          <Text style={styles.time}>{item.time}</Text>
+    ({ item }) => {
+      const isHearted = hearted.has(item.id);
+      return (
+        <View style={styles.postCard}>
+          <View style={styles.postHeader}>
+            <Text style={styles.handle}>@{item.handle}</Text>
+            <Text style={styles.time}>{item.time}</Text>
+          </View>
+          <Text style={styles.postText}>{item.text}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => encourage(item.id)}
+            style={styles.heartRow}>
+            <Text style={[styles.hearts, isHearted && styles.heartsActive]}>
+              {isHearted ? '💚' : '🤍'} {item.hearts + (isHearted ? 1 : 0)}
+            </Text>
+            {isHearted && <Text style={styles.heartedLabel}>Encouraged</Text>}
+          </Pressable>
         </View>
-        <Text style={styles.postText}>{item.text}</Text>
-        <Text style={styles.hearts}>♥ {item.hearts}</Text>
-      </View>
-    ),
-    []
+      );
+    },
+    [hearted, encourage],
   );
 
   return (
@@ -96,5 +120,8 @@ const styles = StyleSheet.create({
   handle: { fontSize: 14, fontWeight: '700', color: palette.primary },
   time: { fontSize: 13, color: palette.textSecondary },
   postText: { fontSize: 15, color: palette.textPrimary, marginTop: 8, lineHeight: 22 },
-  hearts: { fontSize: 13, color: palette.danger, marginTop: 10 },
+  heartRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  hearts: { fontSize: 13, color: palette.textSecondary },
+  heartsActive: { color: palette.primary, fontWeight: '700' },
+  heartedLabel: { fontSize: 12, color: palette.primary, marginLeft: 8 },
 });

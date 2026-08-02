@@ -9,15 +9,11 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { MOOD_OPTIONS } from '@/components/dashboard/garden';
 import { palette } from '@/constants/Colors';
-
-const MOODS = [
-  { emoji: '😞', label: 'Low' },
-  { emoji: '😕', label: 'Meh' },
-  { emoji: '😐', label: 'Okay' },
-  { emoji: '🙂', label: 'Good' },
-  { emoji: '😄', label: 'Great' },
-];
+import type { DayStatus, Mood } from '@/database/schema';
+import { useDataStore } from '@/stores/dataStore';
+import { useGrowthStore } from '@/stores/growthStore';
 
 const URGE_LEVELS = [1, 2, 3, 4, 5];
 
@@ -25,18 +21,33 @@ const URGE_LEVELS = [1, 2, 3, 4, 5];
 const STORM_INK = '#5E7C91';
 const STORM_CHIP = '#E9F0F4';
 
-type DayStatus = 'growth' | 'storm';
-
 export default function DailyCheckInScreen() {
   const router = useRouter();
+  const saveCheckin = useDataStore((s) => s.saveCheckin);
+  const completeMission = useGrowthStore((s) => s.completeMission);
   const [dayStatus, setDayStatus] = useState<DayStatus | null>(null);
-  const [mood, setMood] = useState<string | null>(null);
+  const [mood, setMood] = useState<Mood | null>(null);
   const [urge, setUrge] = useState<number | null>(null);
   const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  // Placeholder save: persist to real storage/backend later.
-  const handleSave = () => {
-    router.back();
+  // Persist to the local-first store (SQLite + sync queue). A day with no
+  // explicit status counts as growth.
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await saveCheckin({
+        mood,
+        urge_level: urge,
+        reflection_note: note.trim() ? note.trim() : null,
+        day_status: dayStatus ?? 'growth',
+      });
+      completeMission('daily_checkin');
+    } finally {
+      setSaving(false);
+      router.back();
+    }
   };
 
   return (
@@ -85,13 +96,13 @@ export default function DailyCheckInScreen() {
 
       <Text style={styles.sectionTitle}>Mood</Text>
       <View style={styles.moodRow}>
-        {MOODS.map((option) => {
-          const isSelected = mood === option.label;
+        {MOOD_OPTIONS.map((option) => {
+          const isSelected = mood === option.value;
           return (
             <Pressable
-              key={option.label}
+              key={option.value}
               style={[styles.moodItem, isSelected && styles.moodItemSelected]}
-              onPress={() => setMood(option.label)}>
+              onPress={() => setMood(option.value)}>
               <Text style={styles.moodEmoji}>{option.emoji}</Text>
               <Text
                 style={[styles.moodLabel, isSelected && styles.moodLabelSelected]}>
@@ -129,8 +140,13 @@ export default function DailyCheckInScreen() {
         onChangeText={setNote}
       />
 
-      <Pressable style={styles.primaryButton} onPress={handleSave}>
-        <Text style={styles.primaryButtonText}>Save check-in</Text>
+      <Pressable
+        style={[styles.primaryButton, saving && styles.primaryButtonDisabled]}
+        disabled={saving}
+        onPress={handleSave}>
+        <Text style={styles.primaryButtonText}>
+          {saving ? 'Saving…' : 'Save check-in'}
+        </Text>
       </Pressable>
     </ScrollView>
   );
@@ -181,7 +197,7 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     borderRadius: 12,
     paddingVertical: 10,
-    width: 60,
+    width: 74,
     backgroundColor: palette.surfaceMuted,
   },
   moodItemSelected: { borderColor: palette.primary, backgroundColor: '#e7f4f2' },
@@ -225,5 +241,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 28,
   },
+  primaryButtonDisabled: { opacity: 0.6 },
   primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

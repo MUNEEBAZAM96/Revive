@@ -1,5 +1,8 @@
 import { useColorScheme } from 'react-native';
 
+import { cosmeticById } from '@/services/cosmeticsService';
+import { useGrowthStore } from '@/stores/growthStore';
+
 /**
  * Revive wellness palette. Mirrors the `revive` colors in tailwind.config.js
  * for the places className can't reach (gradients, animated styles, icons).
@@ -29,20 +32,23 @@ export const reviveColors = {
   },
 } as const;
 
+/**
+ * Reads the light/dark palette, then applies the equipped App Theme's accent
+ * over `primary` if the user has unlocked and equipped one — this is the
+ * scoped app-theme effect: the handful of components that read color
+ * dynamically from this hook re-tint, rather than every NativeWind className
+ * app-wide being re-skinned.
+ */
 export function useReviveColors() {
   const scheme = useColorScheme();
-  return reviveColors[scheme === 'dark' ? 'dark' : 'light'];
+  const base = reviveColors[scheme === 'dark' ? 'dark' : 'light'];
+  const equippedTheme = useGrowthStore((s) => s.equippedCosmetics.app_theme);
+  const accent = cosmeticById(equippedTheme)?.accentColor;
+  if (!accent || equippedTheme === 'theme_default') return base;
+  return { ...base, primary: accent };
 }
 
 /** Soft, expensive-feeling card shadow (barely-there on purpose). */
 export const cardShadow = {
   boxShadow: '0px 6px 16px rgba(26, 58, 44, 0.08)',
 } as const;
-
-export const mockDashboard = {
-  userName: 'Muneeb',
-  daysGrowing: 42,
-  longestJourney: 60,
-  todayFocus: 'Building Self-Control',
-  mood: null as string | null,
-};

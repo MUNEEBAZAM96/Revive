@@ -10,8 +10,10 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { palette } from '@/constants/Colors';
+import { useGrowthStore } from '@/stores/growthStore';
 
 type CoachMessage = { id: string; from: 'coach' | 'user'; text: string };
 
@@ -25,18 +27,66 @@ const PLACEHOLDER_MESSAGES: CoachMessage[] = [
   },
 ];
 
+const TODAYS_INSIGHT =
+  'I noticed evenings are usually your difficult time. Would you like to prepare a plan for tonight?';
+
+function TodaysInsight() {
+  const [expanded, setExpanded] = useState(false);
+  const completeMission = useGrowthStore((s) => s.completeMission);
+  const insightRead = useGrowthStore((s) => s.dailyMissions.completed.read_insight === true);
+
+  const toggle = () => {
+    if (!expanded) completeMission('read_insight');
+    setExpanded((v) => !v);
+  };
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={toggle}
+      className="mb-4 rounded-[24px] bg-revive-card p-5 dark:bg-revive-card-dark"
+      style={{ boxShadow: '0px 4px 12px rgba(26, 58, 44, 0.06)' }}>
+      <View className="flex-row items-center">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-revive-mist dark:bg-revive-mist-dark">
+          <Text className="text-lg">🌿</Text>
+        </View>
+        <View className="ml-3 flex-1">
+          <Text className="text-base font-semibold text-revive-ink dark:text-revive-ink-dark">
+            Your Recovery Companion
+          </Text>
+          <Text className="text-[12px] text-revive-muted dark:text-revive-muted-dark">
+            Today&apos;s Insight {insightRead ? '· read ✓' : ''}
+          </Text>
+        </View>
+        <Text className="text-revive-muted dark:text-revive-muted-dark">{expanded ? '▲' : '▼'}</Text>
+      </View>
+      {expanded && (
+        <Animated.View entering={FadeIn.duration(250)}>
+          <Text className="mt-4 text-[14px] leading-6 text-revive-ink dark:text-revive-ink-dark">
+            {TODAYS_INSIGHT}
+          </Text>
+        </Animated.View>
+      )}
+    </Pressable>
+  );
+}
+
 function ListHeader() {
   return (
-    <Text style={styles.notice}>
-      Placeholder conversation — the AI backend is not connected yet. The
-      coach offers support and coping ideas, not medical advice.
-    </Text>
+    <>
+      <TodaysInsight />
+      <Text style={styles.notice}>
+        Placeholder conversation — the AI backend is not connected yet. The
+        coach offers support and coping ideas, not medical advice.
+      </Text>
+    </>
   );
 }
 
 export default function CoachScreen() {
   const [draft, setDraft] = useState('');
   const listRef = useRef<FlatList<CoachMessage>>(null);
+  const completeMission = useGrowthStore((s) => s.completeMission);
 
   const renderMessage: ListRenderItem<CoachMessage> = useCallback(
     ({ item }) => (
@@ -82,7 +132,12 @@ export default function CoachScreen() {
           value={draft}
           onChangeText={setDraft}
         />
-        <Pressable style={styles.sendButton} onPress={() => setDraft('')}>
+        <Pressable
+          style={styles.sendButton}
+          onPress={() => {
+            if (draft.trim()) completeMission('talk_with_coach');
+            setDraft('');
+          }}>
           <Text style={styles.sendText}>Send</Text>
         </Pressable>
       </View>
