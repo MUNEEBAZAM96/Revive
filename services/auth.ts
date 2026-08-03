@@ -1,52 +1,47 @@
-import type { Session } from '@supabase/supabase-js';
-
 import { profileRepository } from '@/repositories/profileRepository';
 
-import { supabase } from './supabase';
-
 /**
- * Auth flow (local-first):
- *   sign up -> Supabase creates the auth user -> we create the LOCAL profile
- *   row immediately (so the app is usable offline) -> session persists in
- *   secure storage -> SyncManager pushes the profile when online.
+ * Auth service — now Clerk-centric.
+ *
+ * Clerk owns session management (sign-up, sign-in, token persistence).
+ * This module provides a `getActiveUserId()` helper for the local-first
+ * SQLite layer. Since Clerk's React hooks (`useAuth`, `useUser`) can only
+ * be called inside components, non-React code (repositories, sync) uses
+ * a module-level cache that the React layer sets on sign-in.
+ *
+ * The Supabase client in `services/supabase.ts` is left untouched — it's
+ * only used by the dormant sync layer and doesn't affect auth.
  */
 
 // Stable id used for local rows when no one is signed in (offline dev / seed).
-// Real sessions use the Supabase auth user id instead.
 export const DEV_USER_ID = '00000000-0000-4000-8000-000000000000';
 
-/** The id to scope local data by: the signed-in user, or the dev id offline. */
+/**
+ * Module-level cache for the Clerk user id.
+ * Set by `setClerkUserId()` from the React layer (e.g. root layout or
+ * switchboard) whenever the signed-in user changes.
+ */
+let _clerkUserId: string | null = null;
+
+/** Call from the React layer when the Clerk session changes. */
+export function setClerkUserId(id: string | null): void {
+  _clerkUserId = id;
+}
+
+/** The id to scope local data by: the Clerk user, or the dev id offline. */
 export async function getActiveUserId(): Promise<string> {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.user.id ?? DEV_USER_ID;
+  return _clerkUserId ?? DEV_USER_ID;
 }
 
-export async function signUp(email: string, password: string): Promise<Session | null> {
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) throw error;
-  if (data.user) {
-    await profileRepository.ensureProfile(data.user.id, {
-      display_name: email.split('@')[0],
-    });
-  }
-  return data.session;
-}
-
-export async function signIn(email: string, password: string): Promise<Session | null> {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-  if (data.user) {
-    await profileRepository.ensureProfile(data.user.id);
-  }
-  return data.session;
-}
-
-export async function signOut(): Promise<void> {
-  await supabase.auth.signOut();
-}
-
-/** Subscribe to session changes; returns an unsubscribe function. */
-export function onAuthStateChange(callback: (session: Session | null) => void): () => void {
-  const { data } = supabase.auth.onAuthStateChange((_event, session) => callback(session));
-  return () => data.subscription.unsubscribe();
+/**
+ * Ensure a local profile row exists for the given user. Called after
+ * Clerk sign-up/sign-in so the local-first store has something to read.
+ */
+export async function ensureLocalProfile(
+  userId: string,
+  displayName?: string,
+): Promise<void> {
+  await profileRepository.ensureProfile(userId, {
+    display_name: displayName,
+  });
 }

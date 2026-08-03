@@ -7,6 +7,7 @@ import AchievementsGrid from '@/components/journey/AchievementsGrid';
 import RecoveryTimeline from '@/components/journey/RecoveryTimeline';
 import StatisticsSection from '@/components/journey/StatisticsSection';
 import TreeEvolutionSection from '@/components/journey/TreeEvolutionSection';
+import { useBottomNavClearance } from '@/hooks/useBottomNavClearance';
 
 type Section = 'calendar' | 'achievements' | 'timeline' | 'statistics' | 'tree';
 
@@ -26,6 +27,7 @@ const SECTIONS: { id: Section; label: string; emoji: string }[] = [
  */
 export default function JourneyScreen() {
   const [section, setSection] = useState<Section>('calendar');
+  const bottomClearance = useBottomNavClearance();
 
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-revive-bg dark:bg-revive-bg-dark">
@@ -66,7 +68,8 @@ export default function JourneyScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerClassName="px-5 pb-32">
+        contentContainerClassName="px-5"
+        contentContainerStyle={{ paddingBottom: bottomClearance }}>
         {section === 'calendar' && <JourneyCalendar />}
         {section === 'achievements' && <AchievementsGrid />}
         {section === 'timeline' && <RecoveryTimeline />}

@@ -1,4 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { ClerkProvider, useAuth } from '@clerk/expo';
+import { tokenCache } from '@clerk/expo/token-cache';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -43,6 +45,7 @@ if (__DEV__) {
 import { useAppBootstrap } from '@/hooks/useAppBootstrap';
 import ReviveSplash from '@/components/ReviveSplash';
 import { useColorScheme } from '@/components/useColorScheme';
+import { setClerkUserId } from '@/services/auth';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -53,6 +56,14 @@ export const unstable_settings = {
   // Anchor deep links / reloads on the switchboard so redirect logic always runs.
   initialRouteName: 'index',
 };
+
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+if (!publishableKey) {
+  throw new Error(
+    'Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY — add it to .env.local and restart Expo.',
+  );
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -82,7 +93,26 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <ClerkUserIdSync />
+      <RootLayoutNav />
+    </ClerkProvider>
+  );
+}
+
+/**
+ * Syncs the Clerk userId to the module-level cache in services/auth.ts
+ * so non-React code (repositories, sync) can access the current user id.
+ */
+function ClerkUserIdSync() {
+  const { userId } = useAuth();
+
+  useEffect(() => {
+    setClerkUserId(userId ?? null);
+  }, [userId]);
+
+  return null;
 }
 
 function RootLayoutNav() {
@@ -108,6 +138,11 @@ function RootLayoutNav() {
         <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'fade' }} />
+
+        {/* Full-screen push, not a modal sheet — the Coach chat should feel
+            like a primary destination (ChatGPT-style), tab bar hidden while
+            in it, dismissed with a normal back gesture. */}
+        <Stack.Screen name="coach-chat" options={{ headerShown: false }} />
 
         {/* Global Modals */}
         <Stack.Screen
@@ -141,18 +176,18 @@ function RootLayoutNav() {
           }}
         />
         <Stack.Screen
-          name="(modals)/journey-calendar"
-          options={{
-            presentation: 'modal',
-            title: 'Your Journey',
-            animation: 'slide_from_bottom',
-          }}
-        />
-        <Stack.Screen
           name="(modals)/rewards-shop"
           options={{
             presentation: 'modal',
             title: 'Rewards Shop',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="premium-paywall"
+          options={{
+            presentation: 'fullScreenModal',
+            headerShown: false,
             animation: 'slide_from_bottom',
           }}
         />

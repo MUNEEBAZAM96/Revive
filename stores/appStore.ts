@@ -28,32 +28,36 @@ const emptyProfile: OnboardingProfile = {
   completedAt: null,
 };
 
+/**
+ * Local app state — onboarding, profile, and preferences.
+ *
+ * Authentication is now handled exclusively by Clerk (via `useAuth()`).
+ * This store no longer tracks `isAuthenticated` / `setAuthenticated`.
+ * The `logout` action only resets local app state — the actual sign-out
+ * is performed via `useClerk().signOut()` in the UI layer.
+ */
 interface AppState {
-  isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   isUnderAge: boolean;
   profile: OnboardingProfile;
-  setAuthenticated: (value: boolean) => void;
   setOnboardingComplete: (value: boolean) => void;
   setIsUnderAge: (value: boolean) => void;
   /** Merge a partial answer into the profile as the user moves through onboarding. */
   updateProfile: (patch: Partial<OnboardingProfile>) => void;
+  /** Reset local state after Clerk sign-out. */
   logout: () => void;
 }
 
 export const useAppStore = create<AppState>()((set) => ({
-  isAuthenticated: false,
   hasCompletedOnboarding: false,
   isUnderAge: false,
   profile: emptyProfile,
-  setAuthenticated: (value) => set({ isAuthenticated: value }),
   setOnboardingComplete: (value) => set({ hasCompletedOnboarding: value }),
   setIsUnderAge: (value) => set({ isUnderAge: value }),
   updateProfile: (patch) =>
     set((state) => ({ profile: { ...state.profile, ...patch } })),
   logout: () =>
     set({
-      isAuthenticated: false,
       hasCompletedOnboarding: false,
       isUnderAge: false,
       profile: emptyProfile,

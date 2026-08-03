@@ -3,6 +3,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { up as up001 } from './001_initial';
 import { up as up002 } from './002_checkin_status';
 import { up as up003 } from './003_revive_gamification';
+import { up as up004 } from './004_recovery_checkins';
 
 export interface Migration {
   version: number;
@@ -19,4 +20,5 @@ export const migrations: Migration[] = [
   { version: 1, name: '001_initial', up: up001 },
   { version: 2, name: '002_checkin_status', up: up002 },
   { version: 3, name: '003_revive_gamification', up: up003 },
+  { version: 4, name: '004_recovery_checkins', up: up004 },
 ];

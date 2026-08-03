@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { useDataStore } from '@/stores/dataStore';
-
-import { CalendarDay, dateKey } from './garden';
+import { useRecoveryCheckIn } from '@/hooks/useRecoveryCheckIn';
+import {
+  RecoveryCheckIn,
+  STATUS_META,
+  todayKey as dateKey,
+  TRIGGER_OPTIONS,
+} from '@/services/checkInService';
 
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -35,17 +39,13 @@ function DayCell({
   onPress,
 }: {
   date: Date;
-  record: CalendarDay | undefined;
+  record: RecoveryCheckIn | undefined;
   isToday: boolean;
   isFuture: boolean;
   selected: boolean;
   onPress: () => void;
 }) {
-  const background = record
-    ? record.status === 'storm'
-      ? 'bg-revive-storm-chip dark:bg-revive-storm-chip-dark'
-      : 'bg-revive-mist dark:bg-revive-mist-dark'
-    : 'bg-transparent';
+  const meta = record ? STATUS_META[record.status] : null;
 
   return (
     <Pressable
@@ -53,29 +53,20 @@ function DayCell({
       accessibilityState={{ selected }}
       disabled={!record}
       onPress={onPress}
-      className={`m-0.5 aspect-square flex-1 items-center justify-center rounded-xl ${background} ${
-        selected ? 'border-2 border-revive-primary dark:border-revive-primary-dark' : ''
-      } ${isToday ? 'border-2 border-revive-secondary' : ''}`}>
+      className="m-0.5 aspect-square flex-1 items-center justify-center rounded-xl"
+      style={[
+        { backgroundColor: meta?.chipColor ?? 'transparent' },
+        selected && { borderWidth: 2, borderColor: meta?.color ?? '#3A8D6D' },
+        isToday && !selected && { borderWidth: 2, borderColor: '#A8D5BA' },
+      ]}>
       <Text
-        className={`text-[10px] ${
-          isFuture
-            ? 'text-revive-muted/40 dark:text-revive-muted-dark/40'
-            : record?.status === 'storm'
-              ? 'text-revive-storm dark:text-revive-storm-dark'
-              : 'text-revive-muted dark:text-revive-muted-dark'
-        }`}>
+        className="text-[10px]"
+        style={{
+          color: isFuture ? 'rgba(107,114,128,0.4)' : meta ? meta.color : undefined,
+        }}>
         {date.getDate()}
       </Text>
-      {record && <Text className="text-[13px]">{record.status === 'storm' ? '⛈️' : '🌿'}</Text>}
-      {record?.checkedIn && (
-        <View
-          className={`absolute bottom-1 h-1 w-1 rounded-full ${
-            record.status === 'storm'
-              ? 'bg-revive-storm dark:bg-revive-storm-dark'
-              : 'bg-revive-primary dark:bg-revive-primary-dark'
-          }`}
-        />
-      )}
+      {meta && <Text className="text-[13px]">{meta.emoji}</Text>}
     </Pressable>
   );
 }
@@ -94,52 +85,48 @@ function Stat({ value, label }: { value: number; label: string }) {
 }
 
 /**
- * Month view of the recovery journey, sourced from real check-ins via the data
- * store: 🌿 growth days, ⛈️ storm days, a small dot for check-ins. No red and
- * no failure framing anywhere.
+ * Month view of the Recovery Check-In history: 🟢 stayed on track, 🟡 had
+ * urges, 🔴 relapse. Reads directly from useRecoveryCheckIn — the calendar
+ * never collects data itself, it only ever displays what the check-in modal
+ * already recorded.
  */
 export default function JourneyCalendar() {
   const today = new Date();
-  const todayKey = dateKey(today);
+  const todayDateKey = dateKey(today);
   const [viewed, setViewed] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  const monthRecords = useDataStore((s) => s.monthRecords);
-  const loadMonth = useDataStore((s) => s.loadMonth);
-  const dashboard = useDataStore((s) => s.dashboard);
-  const loadDashboard = useDataStore((s) => s.loadDashboard);
+  const { checkIns, currentStreak } = useRecoveryCheckIn();
 
   const year = viewed.getFullYear();
   const month = viewed.getMonth();
 
-  useEffect(() => {
-    void loadMonth(year, month);
-  }, [year, month, loadMonth]);
-
-  useEffect(() => {
-    if (!dashboard) void loadDashboard();
-  }, [dashboard, loadDashboard]);
-
   const weeks = useMemo(() => weeksOf(year, month), [year, month]);
   const recordsByDate = useMemo(() => {
-    const map = new Map<string, CalendarDay>();
-    for (const record of monthRecords) map.set(record.date, record);
+    const map = new Map<string, RecoveryCheckIn>();
+    for (const record of checkIns) map.set(record.date, record);
     return map;
-  }, [monthRecords]);
+  }, [checkIns]);
 
-  const stats = useMemo(() => {
-    let growthDays = 0;
-    let checkIns = 0;
-    for (const record of monthRecords) {
-      if (record.status === 'growth') growthDays += 1;
-      if (record.checkedIn) checkIns += 1;
+  const monthStats = useMemo(() => {
+    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    let successDays = 0;
+    let checkedIn = 0;
+    for (const record of checkIns) {
+      if (!record.date.startsWith(prefix)) continue;
+      checkedIn += 1;
+      if (record.status === 'success') successDays += 1;
     }
-    return { growthDays, checkIns };
-  }, [monthRecords]);
+    return { successDays, checkedIn };
+  }, [checkIns, year, month]);
 
   const monthLabel = viewed.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
   const selectedRecord = selectedKey ? recordsByDate.get(selectedKey) : undefined;
   const selectedDate = selectedKey ? new Date(`${selectedKey}T12:00:00`) : null;
+  const selectedMeta = selectedRecord ? STATUS_META[selectedRecord.status] : null;
+  const selectedTriggerLabel = selectedRecord?.trigger
+    ? TRIGGER_OPTIONS.find((t) => t.value === selectedRecord.trigger)?.label
+    : null;
 
   const changeMonth = (delta: number) => {
     setViewed((current) => new Date(current.getFullYear(), current.getMonth() + delta, 1));
@@ -175,9 +162,9 @@ export default function JourneyCalendar() {
 
       {/* Gentle stats — progress framing only */}
       <View className="mt-4 flex-row gap-2">
-        <Stat value={stats.growthDays} label="Growth days" />
-        <Stat value={stats.checkIns} label="Check-ins" />
-        <Stat value={dashboard?.longestStreak ?? 0} label="Longest journey" />
+        <Stat value={monthStats.successDays} label="Success days" />
+        <Stat value={monthStats.checkedIn} label="Check-ins" />
+        <Stat value={currentStreak} label="Current streak" />
       </View>
 
       {/* Weekday header */}
@@ -203,7 +190,7 @@ export default function JourneyCalendar() {
                   key={dayIndex}
                   date={date}
                   record={recordsByDate.get(key)}
-                  isToday={key === todayKey}
+                  isToday={key === todayDateKey}
                   isFuture={date > today}
                   selected={key === selectedKey}
                   onPress={() => setSelectedKey((current) => (current === key ? null : key))}
@@ -215,20 +202,12 @@ export default function JourneyCalendar() {
       </View>
 
       {/* Day detail */}
-      {selectedRecord && selectedDate && (
+      {selectedRecord && selectedDate && selectedMeta && (
         <Animated.View
           entering={FadeIn.duration(300)}
-          className={`mt-3 rounded-2xl p-4 ${
-            selectedRecord.status === 'storm'
-              ? 'bg-revive-storm-chip dark:bg-revive-storm-chip-dark'
-              : 'bg-revive-mist dark:bg-revive-mist-dark'
-          }`}>
-          <Text
-            className={`text-xs font-bold uppercase tracking-wider ${
-              selectedRecord.status === 'storm'
-                ? 'text-revive-storm dark:text-revive-storm-dark'
-                : 'text-revive-primary dark:text-revive-primary-dark'
-            }`}>
+          className="mt-3 rounded-2xl p-4"
+          style={{ backgroundColor: selectedMeta.chipColor }}>
+          <Text className="text-xs font-bold uppercase tracking-wider" style={{ color: selectedMeta.color }}>
             {selectedDate.toLocaleDateString(undefined, {
               weekday: 'short',
               month: 'long',
@@ -236,21 +215,18 @@ export default function JourneyCalendar() {
             })}
           </Text>
           <Text className="mt-1.5 text-sm text-revive-ink dark:text-revive-ink-dark">
-            {selectedRecord.status === 'storm' ? '⛈️ A storm passed' : '🌿 A day of growth'}
-            {selectedRecord.moodEmoji ? `  ·  mood ${selectedRecord.moodEmoji}` : ''}
-            {selectedRecord.checkedIn ? '  ·  💧 checked in' : ''}
+            {selectedMeta.emoji} {selectedMeta.label}
+            {selectedRecord.status === 'urge' && selectedRecord.urgeLevel
+              ? `  ·  urge level ${selectedRecord.urgeLevel}/5`
+              : ''}
+            {selectedRecord.status === 'relapse'
+              ? `  ·  ${selectedRecord.relapseCount}× today`
+              : ''}
           </Text>
-          {selectedRecord.note && (
+          {selectedTriggerLabel && (
             <Text className="mt-1.5 text-[13px] italic text-revive-muted dark:text-revive-muted-dark">
-              &ldquo;{selectedRecord.note}&rdquo;
+              Trigger: {selectedTriggerLabel}
             </Text>
-          )}
-          {selectedRecord.weatheredStorm && (
-            <View className="mt-2 self-start rounded-full bg-revive-card px-3 py-1 dark:bg-revive-card-dark">
-              <Text className="text-xs font-semibold text-revive-primary dark:text-revive-primary-dark">
-                🛡️ Weathered the storm
-              </Text>
-            </View>
           )}
         </Animated.View>
       )}

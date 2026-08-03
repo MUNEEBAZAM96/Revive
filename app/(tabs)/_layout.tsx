@@ -4,7 +4,6 @@ import { Easing, StyleSheet, View } from 'react-native';
 import { SCENE_TRANSITION_MS, SCENE_TRANSLATE_PX } from '@/animations/navigationAnimations';
 import DraggableSupportBubble from '@/components/dashboard/DraggableSupportBubble';
 import NavigationContainer from '@/components/navigation/NavigationContainer';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
 export default function TabLayout() {
   return (
@@ -15,9 +14,12 @@ export default function TabLayout() {
         // replace what renders. See components/navigation/NavigationContainer.
         tabBar={(props) => <NavigationContainer {...props} />}
         screenOptions={{
-          // Disable the static render of the header on web
-          // to prevent a hydration error in React Navigation v6.
-          headerShown: useClientOnlyValue(false, true),
+          // Every screen builds its own SafeAreaView + header content, so the
+          // native stack header is always off. (Previously this only had a
+          // per-screen override on Dashboard — Journey/Coach/Community/
+          // Settings were silently getting BOTH a native header AND their
+          // own in-screen title rendered underneath it.)
+          headerShown: false,
           lazy: true,
           freezeOnBlur: true,
           // Custom fade + slight-translate crossfade between tabs — identical
@@ -43,11 +45,11 @@ export default function TabLayout() {
             config: { duration: SCENE_TRANSITION_MS, easing: Easing.out(Easing.cubic) },
           },
         }}>
-        <Tabs.Screen name="dashboard" options={{ title: '', headerShown: false }} />
-        <Tabs.Screen name="journey" options={{ title: '' }} />
-        <Tabs.Screen name="coach" options={{ title: '' }} />
-        <Tabs.Screen name="community" options={{ title: '' }} />
-        <Tabs.Screen name="settings" options={{ title: '' }} />
+        <Tabs.Screen name="dashboard" />
+        <Tabs.Screen name="journey" />
+        <Tabs.Screen name="coach" />
+        <Tabs.Screen name="community" />
+        <Tabs.Screen name="settings" />
       </Tabs>
 
       {/* Persistent draggable support bubble, visible above every tab. */}

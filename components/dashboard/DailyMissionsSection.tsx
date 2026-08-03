@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
+import { FEATURES } from '@/constants/features';
 import { DAILY_MISSIONS, MissionId } from '@/services/missionsService';
 import { useGrowthStore } from '@/stores/growthStore';
 
@@ -32,6 +33,16 @@ export default function DailyMissionsSection({ delay = 0 }: DailyMissionsSection
     [playlist],
   );
 
+  // Community is gated behind a Coming Soon screen — hide the mission tied to
+  // it rather than deleting it, so re-enabling Community brings it right back.
+  const visibleMissions = useMemo(
+    () =>
+      FEATURES.communityEnabled
+        ? DAILY_MISSIONS
+        : DAILY_MISSIONS.filter((m) => m.id !== 'community_interaction'),
+    [],
+  );
+
   return (
     <View>
       <Animated.Text
@@ -40,7 +51,7 @@ export default function DailyMissionsSection({ delay = 0 }: DailyMissionsSection
         Daily Missions
       </Animated.Text>
 
-      {DAILY_MISSIONS.map((mission, index) => {
+      {visibleMissions.map((mission, index) => {
         const done = missions.completed[mission.id] === true;
         const route = MISSION_ROUTES[mission.id];
         const isGamesMission = mission.id === 'complete_5_games';

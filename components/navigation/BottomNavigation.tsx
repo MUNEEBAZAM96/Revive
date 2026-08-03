@@ -4,6 +4,7 @@ import { Keyboard, Platform, StyleSheet, useColorScheme, useWindowDimensions, Vi
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { BAR_VISIBILITY_TIMING, INDICATOR_SPRING } from '@/animations/navigationAnimations';
+import { NAV_BAR_HEIGHT, NAV_BAR_RADIUS, NAV_FLOAT_GAP } from '@/constants/navigation';
 
 import type { NavIconComponent } from './AnimatedIcon';
 import BottomNavigationItem from './BottomNavigationItem';
@@ -26,9 +27,8 @@ type BottomNavigationProps = {
 
 const ACTIVE_COLOR = '#3A8D6D';
 const INACTIVE_COLOR = '#8B949E';
-const BAR_HEIGHT = 70;
-const BAR_RADIUS = 34;
-const FLOAT_GAP = 12;
+// Geometry constants live in @/constants/navigation — shared with
+// useBottomNavClearance so screens can never fall out of sync with the dock.
 const MAX_BAR_WIDTH = 460;
 
 /**
@@ -104,7 +104,7 @@ export default function BottomNavigation({
 
   const visibilityStyle = useAnimatedStyle(() => ({
     opacity: 1 - hideProgress.value,
-    transform: [{ translateY: hideProgress.value * (BAR_HEIGHT + FLOAT_GAP) }],
+    transform: [{ translateY: hideProgress.value * (NAV_BAR_HEIGHT + NAV_FLOAT_GAP) }],
   }));
 
   const indicatorColor = isDark ? 'rgba(58, 141, 109, 0.22)' : 'rgba(58, 141, 109, 0.12)';
@@ -118,7 +118,7 @@ export default function BottomNavigation({
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: bottomInset + FLOAT_GAP,
+          bottom: bottomInset + NAV_FLOAT_GAP,
           alignItems: 'center',
         },
         visibilityStyle,
@@ -127,15 +127,15 @@ export default function BottomNavigation({
       <View
         style={{
           width: barWidth,
-          height: BAR_HEIGHT,
-          borderRadius: BAR_RADIUS,
+          height: NAV_BAR_HEIGHT,
+          borderRadius: NAV_BAR_RADIUS,
           backgroundColor: isDark ? '#141816' : '#FFFFFF',
           boxShadow: isDark
             ? '0px 12px 28px rgba(0, 0, 0, 0.45)'
             : '0px 12px 28px rgba(26, 58, 44, 0.14)',
         }}>
         {/* Inner: blur + clip + content. */}
-        <View style={{ flex: 1, borderRadius: BAR_RADIUS, overflow: 'hidden' }}>
+        <View style={{ flex: 1, borderRadius: NAV_BAR_RADIUS, overflow: 'hidden' }}>
           <BlurView
             intensity={isDark ? 45 : 65}
             tint={isDark ? 'dark' : 'light'}

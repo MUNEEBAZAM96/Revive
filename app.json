@@ -33,7 +33,16 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@clerk/expo",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Revive uses your microphone to let you talk to your AI Recovery Coach.",
+          "speechRecognitionPermission": "Revive uses speech recognition to turn what you say into text for your AI Recovery Coach.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
