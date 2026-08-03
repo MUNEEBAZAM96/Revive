@@ -27,7 +27,7 @@ export default function DisclaimerScreen() {
       // answers remain in the in-memory store and can be re-synced later.
     }
     setOnboardingComplete(true);
-    router.replace('/(tabs)/dashboard');
+    router.replace('/(tabs)');
   };
 
   return (

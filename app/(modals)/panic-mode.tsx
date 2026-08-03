@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -25,6 +25,13 @@ const ORB = '#65B98A';
 export default function PanicModeScreen() {
   const router = useRouter();
   const completeMission = useGrowthStore((s) => s.completeMission);
+  const { width, height } = useWindowDimensions();
+  // Scales down on short screens (e.g. iPhone SE) instead of a fixed 300px
+  // that leaves no room for the reassurance text, grounding card, and both
+  // buttons below it. Capped at 300 so large screens don't get an oversized orb.
+  const orbSize = Math.round(Math.min(width * 0.78, height * 0.38, 300));
+  const midRingSize = Math.round(orbSize * (220 / 300));
+  const coreSize = Math.round(orbSize * (150 / 300));
   const scale = useSharedValue(1);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [breaths, setBreaths] = useState(0);
@@ -64,32 +71,32 @@ export default function PanicModeScreen() {
 
           {/* Breathing orb */}
           <View className="flex-1 items-center justify-center">
-            <View className="h-[300px] w-[300px] items-center justify-center">
+            <View style={{ width: orbSize, height: orbSize }} className="items-center justify-center">
               <Animated.View
                 style={[orbStyle, { position: 'absolute', alignItems: 'center', justifyContent: 'center' }]}>
                 <View
                   style={{
-                    width: 300,
-                    height: 300,
-                    borderRadius: 150,
+                    width: orbSize,
+                    height: orbSize,
+                    borderRadius: orbSize / 2,
                     alignItems: 'center',
                     justifyContent: 'center',
                     backgroundColor: 'rgba(101,185,138,0.08)',
                   }}>
                   <View
                     style={{
-                      width: 220,
-                      height: 220,
-                      borderRadius: 110,
+                      width: midRingSize,
+                      height: midRingSize,
+                      borderRadius: midRingSize / 2,
                       alignItems: 'center',
                       justifyContent: 'center',
                       backgroundColor: 'rgba(101,185,138,0.14)',
                     }}>
                     <View
                       style={{
-                        width: 150,
-                        height: 150,
-                        borderRadius: 75,
+                        width: coreSize,
+                        height: coreSize,
+                        borderRadius: coreSize / 2,
                         backgroundColor: ORB,
                       }}
                     />
@@ -97,10 +104,15 @@ export default function PanicModeScreen() {
                 </View>
               </Animated.View>
 
-              {/* Phase text stays centered and legible (not scaled). */}
-              <View className="items-center">
-                <Text className="text-[26px] font-bold text-white">{phase.label}</Text>
-                <Text className="mt-1 text-[14px] text-white/70">{phase.sub}</Text>
+              {/* Phase text stays centered and legible. Capped scale so it can
+                  never outgrow the orb itself at large accessibility sizes. */}
+              <View className="items-center px-2">
+                <Text maxFontSizeMultiplier={1.3} className="text-center text-[26px] font-bold text-white">
+                  {phase.label}
+                </Text>
+                <Text maxFontSizeMultiplier={1.3} className="mt-1 text-center text-[14px] text-white/70">
+                  {phase.sub}
+                </Text>
               </View>
             </View>
 

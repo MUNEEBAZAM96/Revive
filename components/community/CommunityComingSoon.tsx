@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
+import { useMainNavigation } from '@/components/navigation/NavigationContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -17,10 +17,10 @@ import Animated, {
  * Premium placeholder shown while Community is gated off
  * (FEATURES.communityEnabled === false). Reads as "coming soon", not "broken"
  * — calm entrance, a slow floating+breathing leaf, no loading states or
- * empty-feed UI. See app/(tabs)/community.tsx for the flag branch.
+ * empty-feed UI. See components/community/CommunityScreen.tsx for the flag branch.
  */
 export default function CommunityComingSoon() {
-  const router = useRouter();
+  const { goToTab } = useMainNavigation();
 
   const floatY = useSharedValue(0);
   const breathe = useSharedValue(1);
@@ -90,7 +90,7 @@ export default function CommunityComingSoon() {
         <Animated.View entering={FadeInDown.delay(480).duration(550)} className="mt-10 w-full">
           <Pressable
             accessibilityRole="button"
-            onPress={() => router.push('/(tabs)/dashboard')}
+            onPress={() => goToTab('dashboard')}
             className="items-center rounded-2xl bg-revive-primary py-4 active:scale-95 dark:bg-revive-primary-dark">
             <Text className="text-base font-bold text-white dark:text-revive-bg-dark">
               Continue Journey

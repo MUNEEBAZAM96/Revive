@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -37,7 +37,10 @@ export default function WelcomeScreen() {
     <SafeAreaView
       edges={['top', 'bottom']}
       className="flex-1 bg-revive-bg dark:bg-revive-bg-dark">
-      <View className="flex-1 items-center justify-center px-8">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+        contentContainerClassName="items-center px-8">
         <Animated.View style={floatStyle} entering={FadeIn.duration(700)}>
           <View className="h-28 w-28 items-center justify-center rounded-full bg-revive-mist dark:bg-revive-mist-dark">
             <Text className="text-5xl">🌿</Text>
@@ -66,7 +69,7 @@ export default function WelcomeScreen() {
             </Text>
           ))}
         </Animated.View>
-      </View>
+      </ScrollView>
 
       <View className="px-6 pb-4">
         <Pressable

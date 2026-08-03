@@ -101,6 +101,11 @@ function SubscriptionSection() {
   );
 }
 
+/**
+ * Lives under components/settings/ (not app/(tabs)/) because it's now a page
+ * inside SwipePager rather than its own Expo Router route — see
+ * components/navigation/MainNavigator.tsx.
+ */
 export default function SettingsScreen() {
   const router = useRouter();
   const bottomClearance = useBottomNavClearance();

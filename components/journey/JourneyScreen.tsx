@@ -20,10 +20,13 @@ const SECTIONS: { id: Section; label: string; emoji: string }[] = [
 ];
 
 /**
- * Journey — personal progress and history, NOT gameplay. Replaces the old
- * Journal tab. A segmented control switches between five substantial
- * sections rather than one long scroll, closer to how Apple Health organizes
- * dense progress data.
+ * Journey — personal progress and history, NOT gameplay. A segmented control
+ * switches between five substantial sections rather than one long scroll,
+ * closer to how Apple Health organizes dense progress data.
+ *
+ * Lives under components/journey/ (not app/(tabs)/) because it's now a page
+ * inside SwipePager rather than its own Expo Router route — see
+ * components/navigation/MainNavigator.tsx.
  */
 export default function JourneyScreen() {
   const [section, setSection] = useState<Section>('calendar');

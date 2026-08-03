@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -51,8 +53,12 @@ export default function DailyCheckInScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>How are you today?</Text>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title}>How are you today?</Text>
 
       <Text style={styles.sectionTitle}>How did today go?</Text>
       <View style={styles.dayStatusRow}>
@@ -122,7 +128,9 @@ export default function DailyCheckInScreen() {
               key={level}
               style={[styles.urgeDot, isSelected && styles.urgeDotSelected]}
               onPress={() => setUrge(level)}>
-              <Text style={[styles.urgeText, isSelected && styles.urgeTextSelected]}>
+              <Text
+                maxFontSizeMultiplier={1.3}
+                style={[styles.urgeText, isSelected && styles.urgeTextSelected]}>
                 {level}
               </Text>
             </Pressable>
@@ -148,7 +156,8 @@ export default function DailyCheckInScreen() {
           {saving ? 'Saving…' : 'Save check-in'}
         </Text>
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -192,12 +201,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   moodItem: {
+    flex: 1,
+    marginHorizontal: 3,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: palette.border,
     borderRadius: 12,
     paddingVertical: 10,
-    width: 74,
     backgroundColor: palette.surfaceMuted,
   },
   moodItemSelected: { borderColor: palette.primary, backgroundColor: '#e7f4f2' },
@@ -210,9 +220,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   urgeDot: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    flex: 1,
+    aspectRatio: 1,
+    minWidth: 40,
+    maxWidth: 60,
+    marginHorizontal: 4,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: palette.border,
     backgroundColor: palette.surfaceMuted,

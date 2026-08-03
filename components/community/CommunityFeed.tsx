@@ -8,7 +8,7 @@ import { useGrowthStore } from '@/stores/growthStore';
 
 /**
  * The real Community feed — fully built, currently gated off behind
- * `FEATURES.communityEnabled` (see app/(tabs)/community.tsx). Preserved as-is
+ * `FEATURES.communityEnabled` (see components/community/CommunityScreen.tsx). Preserved as-is
  * rather than deleted, so re-enabling the feature is a one-line flag flip.
  */
 

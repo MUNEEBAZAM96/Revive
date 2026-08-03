@@ -18,9 +18,12 @@ const MOCK_NAME = 'Muneeb';
 /**
  * The Revive home screen: a premium game-meets-wellness hub, not a habit
  * tracker. Deliberately minimal — profile + Revive Score + Diamonds, today's
- * 5-game playlist, daily missions, a daily reward, and the floating support
- * button. Nothing else: no calendar, no journal, no long statistics — those
- * live in the Journey tab.
+ * 5-game playlist, daily missions, and the floating support button. Nothing
+ * else: no calendar, no journal, no long statistics — those live in Journey.
+ *
+ * Lives under components/dashboard/ (not app/(tabs)/) because it's now a
+ * page inside SwipePager rather than its own Expo Router route — see
+ * components/navigation/MainNavigator.tsx.
  */
 export default function DashboardScreen() {
   const [activeGame, setActiveGame] = useState<GameType | null>(null);

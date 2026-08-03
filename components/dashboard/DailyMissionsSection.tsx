@@ -4,6 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { FEATURES } from '@/constants/features';
+import { useMainNavigation } from '@/components/navigation/NavigationContext';
 import { DAILY_MISSIONS, MissionId } from '@/services/missionsService';
 import { useGrowthStore } from '@/stores/growthStore';
 
@@ -11,11 +12,19 @@ type DailyMissionsSectionProps = {
   delay?: number;
 };
 
-const MISSION_ROUTES: Partial<Record<MissionId, '/(modals)/daily-check-in' | '/(tabs)/coach' | '/(tabs)/community'>> = {
-  daily_checkin: '/(modals)/daily-check-in',
-  talk_with_coach: '/(tabs)/coach',
-  read_insight: '/(tabs)/coach',
-  community_interaction: '/(tabs)/community',
+type MissionAction =
+  | { type: 'modal'; href: '/(modals)/daily-check-in' }
+  | { type: 'tab'; tab: 'coach' | 'community' };
+
+// Dashboard is itself a page inside the swipeable pager (not a route), so a
+// mission that lands on Coach/Community switches tabs through the shared
+// navigation context rather than pushing a route that no longer exists.
+// `daily_checkin` is a real modal route, pushed normally.
+const MISSION_ACTIONS: Partial<Record<MissionId, MissionAction>> = {
+  daily_checkin: { type: 'modal', href: '/(modals)/daily-check-in' },
+  talk_with_coach: { type: 'tab', tab: 'coach' },
+  read_insight: { type: 'tab', tab: 'coach' },
+  community_interaction: { type: 'tab', tab: 'community' },
 };
 
 /**
@@ -25,6 +34,7 @@ const MISSION_ROUTES: Partial<Record<MissionId, '/(modals)/daily-check-in' | '/(
  */
 export default function DailyMissionsSection({ delay = 0 }: DailyMissionsSectionProps) {
   const router = useRouter();
+  const { goToTab } = useMainNavigation();
   const playlist = useGrowthStore((s) => s.todaysPlaylist);
   const missions = useGrowthStore((s) => s.dailyMissions);
 
@@ -53,7 +63,7 @@ export default function DailyMissionsSection({ delay = 0 }: DailyMissionsSection
 
       {visibleMissions.map((mission, index) => {
         const done = missions.completed[mission.id] === true;
-        const route = MISSION_ROUTES[mission.id];
+        const action = MISSION_ACTIONS[mission.id];
         const isGamesMission = mission.id === 'complete_5_games';
 
         const content = (
@@ -83,10 +93,16 @@ export default function DailyMissionsSection({ delay = 0 }: DailyMissionsSection
           </View>
         );
 
+        const handlePress = () => {
+          if (!action) return;
+          if (action.type === 'modal') router.push(action.href);
+          else goToTab(action.tab);
+        };
+
         return (
           <Animated.View key={mission.id} entering={FadeInDown.delay(delay + 60 + index * 40).duration(400)}>
-            {route && !done ? (
-              <Pressable accessibilityRole="button" onPress={() => router.push(route)} className="active:opacity-85">
+            {action && !done ? (
+              <Pressable accessibilityRole="button" onPress={handlePress} className="active:opacity-85">
                 {content}
               </Pressable>
             ) : (

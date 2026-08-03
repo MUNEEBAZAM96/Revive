@@ -3,11 +3,11 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-type SupportOption = {
-  emoji: string;
-  label: string;
-  route: '/(modals)/panic-mode' | '/(modals)/crisis-resources' | '/(tabs)/coach';
-};
+import { useMainNavigation } from '@/components/navigation/NavigationContext';
+
+type SupportOption =
+  | { emoji: string; label: string; type: 'modal'; href: '/(modals)/panic-mode' | '/(modals)/crisis-resources' }
+  | { emoji: string; label: string; type: 'tab'; tab: 'coach' };
 
 /**
  * Breathing, Emergency Reset, and Grounding Exercise all route to the same
@@ -16,11 +16,11 @@ type SupportOption = {
  * deliberate, not an oversight.
  */
 const SUPPORT_OPTIONS: SupportOption[] = [
-  { emoji: '🧘', label: 'Breathing', route: '/(modals)/panic-mode' },
-  { emoji: '🆘', label: 'SOS', route: '/(modals)/crisis-resources' },
-  { emoji: '💬', label: 'Talk with Coach', route: '/(tabs)/coach' },
-  { emoji: '🔄', label: 'Emergency Reset', route: '/(modals)/panic-mode' },
-  { emoji: '🌍', label: 'Grounding Exercise', route: '/(modals)/panic-mode' },
+  { emoji: '🧘', label: 'Breathing', type: 'modal', href: '/(modals)/panic-mode' },
+  { emoji: '🆘', label: 'SOS', type: 'modal', href: '/(modals)/crisis-resources' },
+  { emoji: '💬', label: 'Talk with Coach', type: 'tab', tab: 'coach' },
+  { emoji: '🔄', label: 'Emergency Reset', type: 'modal', href: '/(modals)/panic-mode' },
+  { emoji: '🌍', label: 'Grounding Exercise', type: 'modal', href: '/(modals)/panic-mode' },
 ];
 
 type SupportBottomSheetProps = {
@@ -32,10 +32,12 @@ type SupportBottomSheetProps = {
 export default function SupportBottomSheet({ visible, onClose }: SupportBottomSheetProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { goToTab } = useMainNavigation();
 
-  const choose = (route: SupportOption['route']) => {
+  const choose = (option: SupportOption) => {
     onClose();
-    router.push(route);
+    if (option.type === 'modal') router.push(option.href);
+    else goToTab(option.tab);
   };
 
   return (
@@ -59,7 +61,7 @@ export default function SupportBottomSheet({ visible, onClose }: SupportBottomSh
                 <Pressable
                   key={option.label}
                   accessibilityRole="button"
-                  onPress={() => choose(option.route)}
+                  onPress={() => choose(option)}
                   className="mb-2.5 flex-row items-center rounded-2xl bg-revive-mist px-4 py-3.5 active:scale-95 dark:bg-revive-mist-dark">
                   <Text className="text-xl">{option.emoji}</Text>
                   <Text className="ml-3 text-base font-medium text-revive-ink dark:text-revive-ink-dark">
