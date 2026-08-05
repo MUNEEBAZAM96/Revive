@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LogBox } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -46,6 +46,7 @@ import { useAppBootstrap } from '@/hooks/useAppBootstrap';
 import ReviveSplash from '@/components/ReviveSplash';
 import { useColorScheme } from '@/components/useColorScheme';
 import { setClerkUserId } from '@/services/auth';
+import { useSubscriptionStore } from '@/stores/subscriptionStore';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -96,6 +97,7 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ClerkUserIdSync />
+      <RevenueCatProvider />
       <RootLayoutNav />
     </ClerkProvider>
   );
@@ -111,6 +113,38 @@ function ClerkUserIdSync() {
   useEffect(() => {
     setClerkUserId(userId ?? null);
   }, [userId]);
+
+  return null;
+}
+
+/**
+ * Boots RevenueCat and keeps its identity in step with Clerk.
+ *
+ * Configured once with the Clerk user id when one is already known, so the very
+ * first entitlement read is for the right person. Afterwards, sign-in/sign-out
+ * alias the SDK (logIn/logOut) — that's what makes a subscription follow
+ * someone to a new device or survive a reinstall.
+ *
+ * Renders nothing and never blocks the UI: if RevenueCat can't run (Expo Go,
+ * web, missing key) the store flips to `unavailable` and the app runs free-tier.
+ */
+function RevenueCatProvider() {
+  const { isLoaded, userId } = useAuth();
+  const initialize = useSubscriptionStore((s) => s.initialize);
+  const syncUser = useSubscriptionStore((s) => s.syncUser);
+  const initialized = useRef(false);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    if (!initialized.current) {
+      initialized.current = true;
+      void initialize(userId ?? null);
+      return;
+    }
+
+    void syncUser(userId ?? null);
+  }, [isLoaded, userId, initialize, syncUser]);
 
   return null;
 }

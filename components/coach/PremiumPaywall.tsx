@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -19,7 +19,7 @@ import X from 'lucide-react-native/icons/x';
 import SubscriptionCard from '@/components/coach/SubscriptionCard';
 import { useReviveColors } from '@/components/dashboard/theme';
 import { useSubscription } from '@/hooks/useSubscription';
-import { PRICING_PLANS, SUBSCRIPTION_ERROR_MESSAGES, type PlanId } from '@/services/subscriptionService';
+import { yearlySavingsPercent, type PlanId } from '@/services/subscriptionService';
 
 const BENEFITS = [
   'Unlimited AI conversations',
@@ -101,22 +101,34 @@ type PremiumPaywallProps = {
 };
 
 /**
- * The world-class paywall — hero, benefits, pricing, a single clear CTA,
- * restore/legal in the footer. `useSubscription()` is the seam to a real
- * RevenueCat integration (see subscriptionService.ts); this component only
- * ever reads `isPro`/`purchase`/`restore` from that hook.
+ * Revive's own paywall — hero, benefits, pricing, a single clear CTA,
+ * restore/legal in the footer. It's the fallback for `app/premium-paywall.tsx`,
+ * used when no RevenueCat paywall is configured for the offering or the SDK
+ * can't run in this build.
+ *
+ * Every price shown here comes from the store via `plans` (RevenueCat
+ * offering → packages), never from constants — so what someone reads is what
+ * they're charged, in their own currency.
  */
 export default function PremiumPaywall({ onDismiss }: PremiumPaywallProps) {
   const colors = useReviveColors();
-  const { purchase, restore, isBusy, status, lastError, clearError } = useSubscription();
+  const { plans, purchase, restore, isBusy, status, lastError, clearError, unavailable } =
+    useSubscription();
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('yearly');
   const [celebration, setCelebration] = useState<'purchase' | 'restore' | null>(null);
 
   const close = () => onDismiss();
 
+  // Offerings load asynchronously; if the yearly plan isn't in this offering,
+  // fall back to whatever the first available plan is rather than showing a
+  // selected-but-unbuyable option.
+  const selectedPlanDef = plans.find((p) => p.id === selectedPlan) ?? plans[0];
+  const canPurchase = Boolean(selectedPlanDef?.pkg) && !unavailable;
+
   const handlePurchase = async () => {
+    if (!selectedPlanDef) return;
     clearError();
-    const success = await purchase(selectedPlan);
+    const success = await purchase(selectedPlanDef.pkg ?? selectedPlanDef.id);
     if (success) setCelebration('purchase');
   };
 
@@ -130,8 +142,15 @@ export default function PremiumPaywall({ onDismiss }: PremiumPaywallProps) {
     Alert.alert(title, 'This is placeholder legal copy — add your real policy text here before release.');
   };
 
-  const selectedPlanDef = PRICING_PLANS.find((p) => p.id === selectedPlan)!;
-  const ctaLabel = selectedPlanDef.trialDays > 0 ? 'Start Free Trial' : 'Unlock Revive Pro';
+  const savings = useMemo(() => yearlySavingsPercent(plans), [plans]);
+
+  const ctaLabel = !canPurchase
+    ? 'Loading plans…'
+    : selectedPlanDef.trialDays > 0
+      ? 'Start Free Trial'
+      : selectedPlanDef.id === 'lifetime'
+        ? 'Unlock Revive Pro Forever'
+        : 'Unlock Revive Pro';
 
   if (celebration) {
     return (
@@ -207,11 +226,12 @@ export default function PremiumPaywall({ onDismiss }: PremiumPaywallProps) {
         </Animated.View>
 
         <View className="mt-7 gap-3">
-          {PRICING_PLANS.map((plan, i) => (
+          {plans.map((plan, i) => (
             <SubscriptionCard
               key={plan.id}
               plan={plan}
-              selected={selectedPlan === plan.id}
+              savingsPercent={plan.id === 'yearly' ? savings : null}
+              selected={selectedPlanDef?.id === plan.id}
               onSelect={() => setSelectedPlan(plan.id)}
               delay={240 + i * 60}
             />
@@ -220,9 +240,7 @@ export default function PremiumPaywall({ onDismiss }: PremiumPaywallProps) {
 
         {lastError && (
           <Animated.View entering={FadeIn.duration(200)} className="mt-4 rounded-2xl bg-[#D1567B1A] px-4 py-3">
-            <Text className="text-[13px] font-medium text-[#D1567B]">
-              {SUBSCRIPTION_ERROR_MESSAGES[lastError.code]}
-            </Text>
+            <Text className="text-[13px] font-medium text-[#D1567B]">{lastError.message}</Text>
           </Animated.View>
         )}
 
@@ -230,17 +248,17 @@ export default function PremiumPaywall({ onDismiss }: PremiumPaywallProps) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={ctaLabel}
-            disabled={isBusy}
+            disabled={isBusy || !canPurchase}
             onPress={handlePurchase}
             className="items-center rounded-2xl bg-revive-primary py-4 active:scale-95 dark:bg-revive-primary-dark"
-            style={{ opacity: isBusy ? 0.7 : 1 }}>
+            style={{ opacity: isBusy || !canPurchase ? 0.7 : 1 }}>
             {status === 'purchasing' ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text className="text-base font-bold text-white dark:text-revive-bg-dark">{ctaLabel}</Text>
             )}
           </Pressable>
-          {selectedPlanDef.trialDays > 0 && (
+          {selectedPlanDef && selectedPlanDef.trialDays > 0 && (
             <Text className="mt-2 text-center text-[11px] text-revive-muted dark:text-revive-muted-dark">
               {selectedPlanDef.trialDays}-day free trial, then {selectedPlanDef.priceLabel}
               {selectedPlanDef.periodLabel}. Cancel anytime.

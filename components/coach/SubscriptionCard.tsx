@@ -1,18 +1,26 @@
 import { Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { yearlySavingsPercent, type PricingPlan } from '@/services/subscriptionService';
+import { type PricingPlan } from '@/services/subscriptionService';
 
 type SubscriptionCardProps = {
   plan: PricingPlan;
   selected: boolean;
   onSelect: () => void;
+  /** Savings vs. 12× monthly, computed from live store prices. Null hides the badge. */
+  savingsPercent?: number | null;
   delay?: number;
 };
 
 /** A single selectable pricing plan — used on the paywall and reused (read-only) in Settings' subscription section. */
-export default function SubscriptionCard({ plan, selected, onSelect, delay = 0 }: SubscriptionCardProps) {
-  const savings = plan.id === 'yearly' ? yearlySavingsPercent() : null;
+export default function SubscriptionCard({
+  plan,
+  selected,
+  onSelect,
+  savingsPercent = null,
+  delay = 0,
+}: SubscriptionCardProps) {
+  const savings = savingsPercent;
 
   return (
     <Animated.View entering={FadeInDown.delay(delay).duration(450)}>

@@ -10,7 +10,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useAppStore } from '@/stores/appStore';
 
 // Apple's and Google's own documented deep links into their subscription
-// management screens — not app-specific, so there's nothing to configure.
+// management screens — not app-specific, so there's nothing to configure. Only
+// used when RevenueCat's Customer Center can't be shown (Expo Go, web).
 const MANAGE_SUBSCRIPTION_URL =
   Platform.OS === 'ios'
     ? 'itms-apps://apps.apple.com/account/subscriptions'
@@ -22,7 +23,36 @@ function formatDate(iso: string): string {
 
 function SubscriptionSection() {
   const router = useRouter();
-  const { isPro, planDetails, isTrialing, trialEndsAt, renewsAt, status, restore } = useSubscription();
+  const {
+    isPro,
+    plan,
+    isTrialing,
+    trialEndsAt,
+    renewsAt,
+    willRenew,
+    isLifetime,
+    status,
+    restore,
+    unavailable,
+    openCustomerCenter,
+  } = useSubscription();
+
+  /**
+   * The Customer Center is RevenueCat's own self-service flow — cancel, change
+   * plan, request a refund, redeem a promotional offer, restore. It's remotely
+   * configured, so the retention offers and survey questions change without a
+   * release. Falling back to the raw store URL keeps the button honest in
+   * builds where the native UI isn't available.
+   */
+  const handleManage = async () => {
+    const presented = unavailable ? false : await openCustomerCenter();
+    if (!presented) Linking.openURL(MANAGE_SUBSCRIPTION_URL);
+  };
+
+  // Lifetime has nothing to renew, and a cancelled subscription runs out
+  // rather than renewing — say which, instead of always saying "Renews".
+  const expiryLabel = isTrialing ? 'Trial ends' : willRenew ? 'Renews' : 'Access until';
+  const expiryDate = isTrialing ? trialEndsAt : renewsAt;
 
   return (
     <View
@@ -37,31 +67,29 @@ function SubscriptionSection() {
           <View className="mt-3 flex-row items-center justify-between">
             <Text className="text-[13px] text-revive-muted dark:text-revive-muted-dark">Current Plan</Text>
             <Text className="text-[13px] font-semibold capitalize text-revive-ink dark:text-revive-ink-dark">
-              Revive Pro · {planDetails?.id ?? '—'}
+              Revive Pro · {plan ?? 'active'}
             </Text>
           </View>
-          <View className="mt-2 flex-row items-center justify-between">
-            <Text className="text-[13px] text-revive-muted dark:text-revive-muted-dark">
-              {isTrialing ? 'Trial ends' : 'Renews'}
-            </Text>
-            <Text className="text-[13px] font-semibold text-revive-ink dark:text-revive-ink-dark">
-              {isTrialing && trialEndsAt
-                ? formatDate(trialEndsAt)
-                : renewsAt
-                  ? formatDate(renewsAt)
-                  : '—'}
-            </Text>
-          </View>
+          {!isLifetime && (
+            <View className="mt-2 flex-row items-center justify-between">
+              <Text className="text-[13px] text-revive-muted dark:text-revive-muted-dark">
+                {expiryLabel}
+              </Text>
+              <Text className="text-[13px] font-semibold text-revive-ink dark:text-revive-ink-dark">
+                {expiryDate ? formatDate(expiryDate) : '—'}
+              </Text>
+            </View>
+          )}
 
           <Pressable
             accessibilityRole="button"
-            onPress={() => Linking.openURL(MANAGE_SUBSCRIPTION_URL)}
+            onPress={handleManage}
             className="mt-4 items-center rounded-2xl bg-revive-mist py-3 active:opacity-80 dark:bg-revive-mist-dark">
             <Text className="text-[14px] font-semibold text-revive-ink dark:text-revive-ink-dark">
               Manage Subscription
             </Text>
           </Pressable>
-          {planDetails?.id === 'monthly' && (
+          {plan === 'monthly' && (
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push('/premium-paywall')}
@@ -114,7 +142,7 @@ export default function SettingsScreen() {
   const setOnboardingComplete = useAppStore((state) => state.setOnboardingComplete);
   const logout = useAppStore((state) => state.logout);
   const [signingOut, setSigningOut] = useState(false);
-  const { isPro, purchase, debugDowngrade } = useSubscription();
+  const { openPaywall, refresh } = useSubscription();
 
   const handleResetOnboarding = () => {
     setOnboardingComplete(false);
@@ -212,24 +240,25 @@ export default function SettingsScreen() {
               Open Daily Check-in
             </Text>
           </Pressable>
+          {/* Entitlements are now RevenueCat's to grant, so there's nothing
+              local to fake. Use the Test Store in development, or RevenueCat's
+              sandbox/dashboard to grant and revoke Revive Pro. */}
           <Pressable
             accessibilityRole="button"
-            onPress={() => purchase('yearly')}
+            onPress={() => openPaywall()}
             className="mt-2.5 items-center rounded-2xl bg-revive-card py-3 active:opacity-80 dark:bg-revive-card-dark">
             <Text className="text-[15px] font-medium text-revive-ink dark:text-revive-ink-dark">
-              Simulate Pro Purchase
+              Open RevenueCat Paywall
             </Text>
           </Pressable>
-          {isPro && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={debugDowngrade}
-              className="mt-2.5 items-center rounded-2xl bg-revive-card py-3 active:opacity-80 dark:bg-revive-card-dark">
-              <Text className="text-[15px] font-medium text-revive-ink dark:text-revive-ink-dark">
-                Downgrade to Free
-              </Text>
-            </Pressable>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => refresh()}
+            className="mt-2.5 items-center rounded-2xl bg-revive-card py-3 active:opacity-80 dark:bg-revive-card-dark">
+            <Text className="text-[15px] font-medium text-revive-ink dark:text-revive-ink-dark">
+              Refresh Entitlements
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

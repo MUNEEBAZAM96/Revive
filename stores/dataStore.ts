@@ -104,7 +104,6 @@ interface DataState {
   loadMonth: (year: number, month: number) => Promise<void>;
   saveCheckin: (input: unknown) => Promise<void>;
   completeOnboarding: (answers: OnboardingProfile) => Promise<void>;
-  syncNow: () => Promise<void>;
 }
 
 export const useDataStore = create<DataState>((set, get) => ({
@@ -156,10 +155,6 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
 
   completeOnboarding: async () => {
-    // No-op in UI-only mode.
-  },
-
-  syncNow: async () => {
     // No-op in UI-only mode.
   },
 }));
